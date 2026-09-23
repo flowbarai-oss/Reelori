@@ -44,6 +44,28 @@ test("new stories remain isolated and survive reopening without copying sample j
     rmSync(dir, { recursive: true, force: true });
   }
 });
+test("single-line story breaks draft separate shots without changing the original", () => {
+  const store = new Store(":memory:");
+  try {
+    const story = "清晨到达车站。\r\n发现一封信。\r\n带着信上车。";
+    const project = store.create({ title: "旅程", story });
+    assert.equal(project.story, story);
+    assert.deepEqual(
+      project.shots.map((shot) => shot.description),
+      ["清晨到达车站。", "发现一封信。", "带着信上车。"],
+    );
+    const paragraphStory = store.create({
+      title: "段落",
+      story: "第一行。\n第二行。\n\n另一个段落。",
+    });
+    assert.deepEqual(
+      paragraphStory.shots.map((shot) => shot.description),
+      ["第一行。\n第二行。", "另一个段落。", ""],
+    );
+  } finally {
+    store.close();
+  }
+});
 test("invalid story imports never create a project; long originals are not silently truncated", () => {
   const store = new Store(":memory:");
   try {
