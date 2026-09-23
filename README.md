@@ -1,5 +1,7 @@
 # 幕芽 Reelori · AI Short Film Studio
 
+Official source / 官方源码：[flowbarai-oss/Reelori](https://github.com/flowbarai-oss/Reelori).
+
 Reelori is a local-first, single-user short film workspace. It lets you organize
 a story into shots, preview timing, generate or import media, review candidates,
 edit subtitles and audio, and export a short film with its source manifest.
