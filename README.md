@@ -60,7 +60,8 @@ The FlowBar route uses `https://api.flowbarai.com/v1`; get a key from
 - Windows is the currently tested development platform. Docker remains a
   candidate until a clean Linux build and data-persistence test passes.
 
-See [quick start](docs/release/QUICKSTART.md), [security policy](SECURITY.md),
+See [Windows source acceptance](docs/release/ACCEPTANCE-20260924.md),
+[quick start](docs/release/QUICKSTART.md), [security policy](SECURITY.md),
 [third-party notices](THIRD_PARTY_NOTICES.md) and [contributing](CONTRIBUTING.md).
 Code and the three bundled example images are licensed under [MIT](LICENSE).
 Bundled third-party components retain their own licenses; see the
