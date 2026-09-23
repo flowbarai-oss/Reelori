@@ -118,7 +118,7 @@ test('source video and audio obey selected in/out frames in a real local render'
   assert.equal(m.shots[0].sourceSeconds,5);
   assert.equal(m.verification.audio,true);
   const delivery=await createDelivery(result.id,p.id,path.join(dir,'exports'),path.join(dir,'assets'));
-  const delivered=JSON.parse(execFileSync('python',['-c',"import zipfile,json,sys; z=zipfile.ZipFile(sys.argv[1]); print(z.read('storyboard.json').decode())",delivery.file],{encoding:'utf8'}));
+  const delivered=JSON.parse(execFileSync('python',['-c',"import zipfile,json,sys; z=zipfile.ZipFile(sys.argv[1]); print(json.dumps(json.loads(z.read('storyboard.json').decode('utf-8')),ensure_ascii=True))",delivery.file],{encoding:'utf8'}));
   assert.equal(delivered.shots[0].clipStartSeconds,1);
   assert.equal(delivered.shots[0].sourceSeconds,5);
  }finally{rmSync(dir,{recursive:true,force:true});}
