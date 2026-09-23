@@ -17,12 +17,31 @@ test('explicit TTS adoption replaces same-shot voice, preserves unrelated audio 
  ledger.adoptProviderAudio(p,b.id,p.revision);assert.equal(p.audioTracks!.length,2);assert.deepEqual(p.audioTracks![0],music);assert.equal(p.audioTracks![1].id,b.id);assert.equal(ledger.providerTotals(p).reservedMicros,30000);
  assert.throws(()=>ledger.adoptProviderAudio(p,b.id,p.revision-1));
 });
+test('TTS adoption replaces an overlapping imported dialogue but keeps other shots and music',()=>{
+ const p=setup();
+ addAudioTrack(p,{name:'old owned voice',audio:'/api/assets/'+'b'.repeat(64)+'.wav',durationMs:2000,offsetMs:0,volume:70,kind:'dialogue',rights:'owned'},p.revision);
+ const old=p.audioTracks![0];
+ addAudioTrack(p,{name:'later voice',audio:'/api/assets/'+'c'.repeat(64)+'.wav',durationMs:1000,offsetMs:5000,volume:70,kind:'dialogue',rights:'owned'},p.revision);
+ const later=p.audioTracks![1];
+ addAudioTrack(p,{name:'music',audio:'/api/assets/'+'d'.repeat(64)+'.wav',durationMs:1000,offsetMs:0,volume:20,kind:'music',rights:'owned'},p.revision);
+ const music=p.audioTracks![2];
+ const job=generated(p);ledger.adoptProviderAudio(p,job.id,p.revision);
+ assert.deepEqual(p.audioTracks?.map(t=>t.id),[later.id,music.id,job.id]);
+ assert.ok(!p.audioTracks?.some(t=>t.id===old.id));
+ assert.doesNotThrow(()=>validateAudioTracks(p,true));
+});
+test('TTS adoption refuses to discard an imported voice spanning shot boundaries',()=>{
+ const p=setup();addAudioTrack(p,{name:'cross-shot voice',audio:'/api/assets/'+'b'.repeat(64)+'.wav',durationMs:6000,offsetMs:0,volume:70,kind:'dialogue',rights:'owned'},p.revision);
+ const before=p.audioTracks![0];const job=generated(p);
+ assert.throws(()=>ledger.adoptProviderAudio(p,job.id,p.revision),/跨越此镜头边界/);
+ assert.deepEqual(p.audioTracks,[before]);assert.ok(job.resultAudio);
+});
 test('re-adopting a candidate repairs legacy duplicate same-shot voices',()=>{
  const p=setup();const a=generated(p),b=generated(p);ledger.adoptProviderAudio(p,a.id,p.revision);p.audioTracks!.push({...p.audioTracks![0],id:b.id});
  assert.throws(()=>validateAudioTracks(p,true));ledger.adoptProviderAudio(p,a.id,p.revision);assert.equal(p.audioTracks!.length,1);assert.doesNotThrow(()=>validateAudioTracks(p,true));
 });
 test('a kept candidate can be adopted after capacity is freed without another generation',()=>{
- const p=setup();for(let i=0;i<8;i++)addAudioTrack(p,{name:'owned',audio:'/api/assets/'+'b'.repeat(64)+'.wav',durationMs:1000,offsetMs:0,volume:20,kind:'dialogue',rights:'owned'},p.revision);
+ const p=setup();for(let i=0;i<8;i++)addAudioTrack(p,{name:'owned',audio:'/api/assets/'+'b'.repeat(64)+'.wav',durationMs:1000,offsetMs:5000,volume:20,kind:'dialogue',rights:'owned'},p.revision);
  const j=generated(p);assert.throws(()=>ledger.adoptProviderAudio(p,j.id,p.revision));removeAudioTrack(p,p.audioTracks![0].id,p.revision);ledger.adoptProviderAudio(p,j.id,p.revision);
  assert.equal(p.audioTracks!.length,8);assert.equal(p.provider!.jobs.length,1);assert.equal(ledger.providerTotals(p).reservedMicros,15000);
 });
