@@ -72,7 +72,7 @@ test("a succeeded TTS job lands as a generated dialogue track at the shot's time
   assert.equal(p.audioRevision, 1);
 });
 
-test("a TTS result that would overflow the timeline settles the job without silently dropping or truncating audio", () => {
+test("a TTS result at the dialogue cap remains a candidate without silently dropping audio", () => {
   const p = setup();
   // fill the 8-dialogue cap first so the next TTS result cannot be added
   for (let i = 0; i < 8; i++)
@@ -82,7 +82,7 @@ test("a TTS result that would overflow the timeline settles the job without sile
         name: "existing-" + i,
         audio: "/api/assets/" + "a".repeat(64) + ".wav",
         durationMs: 500,
-        offsetMs: 0,
+        offsetMs: 5000,
         volume: 50,
         kind: "dialogue",
         rights: "owned",

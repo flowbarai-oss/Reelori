@@ -306,9 +306,17 @@ export function adoptProviderAudio(p: Project, id: string, revision: number) {
   // The old automatic-adoption implementation used job IDs as track IDs too.
   // Recognize those historical tracks without deleting their underlying files.
   const sameShot = new Set((p.provider?.jobs ?? []).filter(x => x.quote.input.kind === 'audio' && x.quote.input.shotId === shot.id).map(x => x.id));
-  const tracks = [...(p.audioTracks ?? []).filter(t => !sameShot.has(t.id)), {
+  const shotStart = p.shots.slice(0,index).reduce((n,s)=>n+s.seconds*1000,0);
+  const shotEnd = shotStart + shot.seconds*1000;
+  const existing = p.audioTracks ?? [];
+  check(!existing.some(t => t.kind === 'dialogue' && !sameShot.has(t.id) &&
+    t.offsetMs < shotEnd && t.offsetMs+t.durationMs > shotStart &&
+    (t.offsetMs < shotStart || t.offsetMs+t.durationMs > shotEnd)),
+    '已有配音跨越此镜头边界，请先调整或移出编排后再采用');
+  const tracks = [...existing.filter(t => !sameShot.has(t.id) &&
+    !(t.kind === 'dialogue' && t.offsetMs < shotEnd && t.offsetMs+t.durationMs > shotStart)), {
     id: job.id, name: 'TTS · ' + shot.title.slice(0,60), audio: job.resultAudio!,
-    durationMs: job.resultDurationMs!, offsetMs: p.shots.slice(0,index).reduce((n,s)=>n+s.seconds*1000,0),
+    durationMs: job.resultDurationMs!, offsetMs: shotStart,
     volume: 100, kind: 'dialogue' as const, rights: 'generated' as const, createdAt: Date.now(),
   }];
   validateAudioTracks({...p,audioTracks:tracks},true);
