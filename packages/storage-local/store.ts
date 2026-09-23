@@ -133,7 +133,14 @@ export class Store {
     p.story = input.story;
     p.sourceName = input.sourceName ?? "pasted";
     p.createdAt = Date.now();
-    const parts = input.story.trim().split(/\r?\n\s*\r?\n/);
+    const paragraphs = input.story.trim().split(/\r?\n\s*\r?\n/);
+    const lines = input.story
+      .trim()
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+    const parts =
+      paragraphs.length === 1 && lines.length > 1 ? lines : paragraphs;
     const count = Math.max(3, Math.min(6, parts.length));
     p.shots = Array.from({ length: count }, (_, i) => ({
       ...seedProject().shots[i % 3],
