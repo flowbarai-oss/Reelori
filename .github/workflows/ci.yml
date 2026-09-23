@@ -1,0 +1,30 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main, release/**]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.12.0'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: npm ci
+      - run: node scripts/scan-secrets.mjs --history
+      - run: npm run typecheck
+      - run: npm run build
+      - name: Install test-only FFmpeg
+        run: |
+          python -m pip install --disable-pip-version-check imageio-ffmpeg==0.6.0
+          $ffmpeg = python -c 'import imageio_ffmpeg; print(imageio_ffmpeg.get_ffmpeg_exe())'
+          if (!(Test-Path -LiteralPath $ffmpeg)) { throw 'FFmpeg binary missing' }
+          "REELORI_FFMPEG=$ffmpeg" >> $env:GITHUB_ENV
+      - run: npm test

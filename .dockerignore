@@ -1,0 +1,16 @@
+node_modules
+dist
+.vite
+coverage
+playwright-report
+test-results
+data
+.env
+.env.*
+!.env.example
+*.log
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+.git
+docs/handoff/LOCAL-STATUS.json
