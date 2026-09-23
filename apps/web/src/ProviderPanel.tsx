@@ -69,6 +69,10 @@ export function ProviderPanel({
     if (live.current) onChange(next);
     return next as Project;
   }
+  const isAdopted = (job: ProviderJob) =>
+    project.shots.some(
+      (shot) => shot.id === job.quote.input.shotId && shot.adoptedId === job.id,
+    );
   const jobs = project.provider?.jobs ?? [],
     actual = jobs.reduce((n, j) => n + (j.actualMicros ?? 0), 0),
     reserved = jobs.reduce((n, j) => n + j.reservedMicros, 0);
@@ -412,7 +416,7 @@ export function ProviderPanel({
               {j.state === "succeeded" && j.quote.input.kind !== "audio" && (
                 <button
                   className="secondary"
-                  disabled={busy}
+                  disabled={busy || isAdopted(j)}
                   onClick={() =>
                     act(async () => {
                       await update("adopt", {
@@ -423,7 +427,9 @@ export function ProviderPanel({
                     })
                   }
                 >
-                  {t("人工采纳此候选", "Adopt this candidate")}
+                  {isAdopted(j)
+                    ? t("此候选已采纳", "Candidate adopted")
+                    : t("人工采纳此候选", "Adopt this candidate")}
                 </button>
               )}
               {["succeeded", "failed", "unknown"].includes(j.state) &&
