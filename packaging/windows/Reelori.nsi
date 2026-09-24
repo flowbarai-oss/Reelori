@@ -50,12 +50,12 @@ Section "Reelori" SecMain
   FileClose $0
   WriteUninstaller "$INSTDIR\Uninstall.exe"
   CreateDirectory "$SMPROGRAMS\Reelori"
-  CreateShortCut "$SMPROGRAMS\Reelori\Reelori.lnk" "$INSTDIR\versions\${APP_VERSION}\desktop\Reelori.exe" "" "$INSTDIR\Reelori.ico"
-  CreateShortCut "$DESKTOP\Reelori.lnk" "$INSTDIR\versions\${APP_VERSION}\desktop\Reelori.exe" "" "$INSTDIR\Reelori.ico"
+  CreateShortCut "$SMPROGRAMS\Reelori\Reelori.lnk" "$INSTDIR\versions\${APP_VERSION}\desktop\Reelori.exe" "" "$INSTDIR\versions\${APP_VERSION}\Reelori.ico"
+  CreateShortCut "$DESKTOP\Reelori.lnk" "$INSTDIR\versions\${APP_VERSION}\desktop\Reelori.exe" "" "$INSTDIR\versions\${APP_VERSION}\Reelori.ico"
   CreateShortCut "$SMPROGRAMS\Reelori\Uninstall.lnk" "$INSTDIR\Uninstall.exe"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Reelori" "DisplayName" "Reelori"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Reelori" "DisplayVersion" "${APP_VERSION}"
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Reelori" "DisplayIcon" "$INSTDIR\Reelori.ico"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Reelori" "DisplayIcon" "$INSTDIR\versions\${APP_VERSION}\Reelori.ico"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Reelori" "UninstallString" '$"$INSTDIR\Uninstall.exe$"'
 SectionEnd
 
