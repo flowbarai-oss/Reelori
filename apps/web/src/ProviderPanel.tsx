@@ -29,7 +29,8 @@ export function ProviderPanel({
     [error, setError] = useState(""),
     [billJob, setBillJob] = useState(""),
     [bill, setBill] = useState(""),
-    [evidence, setEvidence] = useState("");
+    [evidence, setEvidence] = useState(""),
+    [historyOpen, setHistoryOpen] = useState(() => project.provider?.jobs.some((job) => ["reserved", "submitting", "running", "unknown"].includes(job.state)) ?? false);
   const live = useRef(true),
     operation = useRef("");
   useEffect(() => {
@@ -286,7 +287,10 @@ export function ProviderPanel({
                 const job = next.provider!.jobs.find(
                   (j) => j.operationId === operation.current,
                 )!;
-                if (live.current) setQuote(null);
+                if (live.current) {
+                  setQuote(null);
+                  setHistoryOpen(true);
+                }
                 await update("provider-run", { jobId: job.id });
               })
             }
@@ -308,6 +312,8 @@ export function ProviderPanel({
           )}
         </p>
       )}
+      <details className="provider-history" open={historyOpen} onToggle={(event) => setHistoryOpen(event.currentTarget.open)}>
+      <summary>{t("生成任务与账单", "Jobs and billing")} · {jobs.length}</summary>
       <ul className="provider-jobs">
         {jobs
           .slice()
@@ -494,6 +500,7 @@ export function ProviderPanel({
           </button>
         </div>
       )}
+      </details>
     </section>
   );
 }

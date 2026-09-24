@@ -1396,13 +1396,10 @@ export function App() {
                               <dd>{usable ? money(settled / usable) : "—"}</dd>
                             </div>
                           </dl>
-                          <RenderPanel
-                            key={project.id}
-                            project={project}
-                            lang={lang}
-                            request={projectApi}
-                            onChange={acceptProject}
-                          />
+                        </section>
+                        <section className="results-production" aria-label={t("成片制作与交付", "Film production and delivery")}>
+                          <RenderPanel key={project.id} project={project} lang={lang} request={projectApi} onChange={acceptProject}>
+                          <div className="results-actions">
                           <button
                             className="secondary full large"
                             disabled={accepted !== project.shots.length || busy}
@@ -1432,6 +1429,8 @@ export function App() {
                               "Export adopted images or videos, subtitles and manifest. Bundled samples and FlowBar candidates are labeled separately. Choose silent output or keep source audio.",
                             )}
                           </p>
+                          </div>
+                          </RenderPanel>
                         </section>
                       </div>
                     </>
@@ -1455,48 +1454,37 @@ export function App() {
                           </p>
                         </div>
                       </section>
+                      <nav className="settings-jump" aria-label={t("设置快捷定位", "Jump to setting")}>
+                        {[
+                          [".provider-panel", t("模型与费用", "Models & cost")],
+                          [".runtime-panel", t("本机检查", "Readiness")],
+                          [".update-panel", t("版本更新", "Updates")],
+                          [".backup-panel", t("备份恢复", "Backups")],
+                          [".project-data-panel", t("项目数据", "Project data")],
+                        ].map(([selector, label]) => (
+                          <button key={selector} className="secondary" onClick={() => document.querySelector(selector)?.scrollIntoView({ block: "start" })}>{label}</button>
+                        ))}
+                      </nav>
                       <div className="settings-grid">
+                        <div className="settings-column">
                         <ProviderPanel key={`provider-${project.id}`} project={project} lang={lang} request={projectApi} onChange={acceptProject}/>
+                        <section className="panel project-data-panel">
+                          <h2>{t("项目与数据", "Project and data")}</h2>
+                          <dl className="receipt-lines">
+                            <div><dt>{t("项目", "Project")}</dt><dd>{project.title}</dd></div>
+                            <div><dt>{t("存储位置", "Storage")}</dt><dd>{t("本机 SQLite", "Local SQLite")}</dd></div>
+                            <div><dt>{t("输入版本", "Input version")}</dt><dd>v{project.inputRevision}</dd></div>
+                            <div><dt>{t("生成模式", "Generation mode")}</dt><dd>{project.provider?.jobs.length?t('包含真实模型任务','Includes provider jobs'):t("内置示例", "Bundled sample")}</dd></div>
+                          </dl>
+                          <details className="story-original"><summary>{t("查看完整原文", "View original story")}</summary><p>{project.story}</p></details>
+                          <button className="secondary" onClick={() => {setBudget(String(project.budgetCents / 100));setDialog("budget");}}>{t("调整模拟预算", "Adjust demo budget")}</button>
+                        </section>
+                        </div>
+                        <div className="settings-column">
                         <RuntimePanel key={`runtime-${project.id}`} lang={lang} request={projectApi}/>
                         <UpdatePanel lang={lang}/>
                         <BackupPanel key={project.id} project={project} lang={lang} request={projectApi} onRestored={selectProject}/>
-                        <section className="panel">
-                          <h2>{t("项目与数据", "Project and data")}</h2>
-                          <dl className="receipt-lines">
-                            <div>
-                              <dt>{t("项目", "Project")}</dt>
-                              <dd>{project.title}</dd>
-                            </div>
-                            <div>
-                              <dt>{t("存储位置", "Storage")}</dt>
-                              <dd>{t("本机 SQLite", "Local SQLite")}</dd>
-                            </div>
-                            <div>
-                              <dt>{t("输入版本", "Input version")}</dt>
-                              <dd>v{project.inputRevision}</dd>
-                            </div>
-                            <div>
-                              <dt>{t("生成模式", "Generation mode")}</dt>
-                              <dd>{project.provider?.jobs.length?t('包含真实模型任务','Includes provider jobs'):t("内置示例", "Bundled sample")}</dd>
-                            </div>
-                          </dl>
-                          <details className="story-original">
-                            <summary>
-                              {t("查看完整原文", "View original story")}
-                            </summary>
-                            <p>{project.story}</p>
-                          </details>
-                          <button
-                            className="secondary"
-                            onClick={() => {
-                              setBudget(String(project.budgetCents / 100));
-                              setDialog("budget");
-                            }}
-                          >
-                            {t("调整模拟预算", "Adjust demo budget")}
-                          </button>
-                        </section>
-                        <section className="panel">
+                        <section className="panel model-connection-panel">
                           <h2>{t("模型连接", "Model connections")}</h2>
                           <span className="pill">
                             {t("独立确认费用", "EXPLICIT COST CONFIRMATION")}
@@ -1515,6 +1503,7 @@ export function App() {
                             )}
                           </p>
                         </section>
+                        </div>
                       </div>
                     </>
                   )}

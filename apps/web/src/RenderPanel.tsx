@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { DownloadSimple, FilmSlate, CircleNotch } from "@phosphor-icons/react";
 import type { Project } from "../../../packages/contracts/index.ts";
 import {AudioPanel} from './AudioPanel';
@@ -21,11 +21,13 @@ export function RenderPanel({
   lang,
   request,
   onChange,
+  children,
 }: {
   project: Project;
   lang: string;
   request: (route: string, body?: unknown) => Promise<any>;
   onChange:(p:Project)=>void;
+  children?: ReactNode;
 }) {
   const t = (zh: string, en: string) => (lang === "zh" ? zh : en);
   const [busy, setBusy] = useState(false);
@@ -68,6 +70,7 @@ export function RenderPanel({
   }, [project.id]);
   return (
     <section className="render-panel">
+      <div className="render-setup">
       <AudioPanel project={project} lang={lang} request={request} onChange={onChange}/>
       <SubtitlePanel project={project} lang={lang} request={request} onChange={onChange} onDirty={setSubtitleDirty}/>
       <label className="render-history">
@@ -158,6 +161,8 @@ export function RenderPanel({
           {error}
         </p>
       )}
+      {children}
+      </div>
       {output && (
         <div className="render-output">
           <div className="share-card-controls">

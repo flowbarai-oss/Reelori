@@ -5,8 +5,8 @@ export function AudioPanel({project,lang,request,onChange}:{project:Project;lang
  const [busy,setBusy]=useState(false),[error,setError]=useState('');const live=useRef(true);
  useEffect(()=>{live.current=true;return()=>{live.current=false;};},[]);
  async function change(route:string,body:Record<string,unknown>){setBusy(true);setError('');try{const p=await request(route,{...body,revision:project.revision});if(live.current)onChange(p);}catch(e){if(live.current)setError((e as Error).message);}finally{if(live.current)setBusy(false);}}
- return <section className="audio-panel">
-  <h3>{t('声音素材','Sound library')} · {project.audioTracks?.length??0}/10</h3>
+ return <details className="audio-panel">
+  <summary>{t('声音素材','Sound library')} · {project.audioTracks?.length??0}/10</summary>
   <p className="fine">{t('导入你有权使用的配音、音乐或音效。WAV / MP3，单段 0.1–30 秒、10 MB 内。最多 8 段配音、1 段音乐和 1 段音效。','Import voice, music or effects you may use. WAV / MP3, 0.1–30 seconds and up to 10 MB each. Up to 8 voice clips, 1 music track and 1 effect.')}</p>
   <form className="audio-form" onSubmit={async e=>{
    e.preventDefault();const data=new FormData(e.currentTarget),file=data.get('file');if(!(file instanceof File)||!file.size||file.size>10*1024*1024){setError(t('请选择 10 MB 内的音频文件','Choose an audio file up to 10 MB'));return;}
@@ -31,5 +31,5 @@ export function AudioPanel({project,lang,request,onChange}:{project:Project;lang
    </form>
   </div>)}
   <p className="fine">{t('选择“混合导入声音”后才用于成片；该模式不叠加原视频声音。音频超出时间线会阻止导出，请先调整。','Choose “Mix imported audio” to use these tracks. That mode excludes source video audio. Resolve any timeline overflow before exporting.')}</p>
- </section>;
+ </details>;
 }
