@@ -34,6 +34,7 @@ import { RuntimePanel } from './RuntimePanel';
 import { UpdatePanel } from './UpdatePanel';
 import { ProviderPanel } from './ProviderPanel';
 import { createProjectClient } from "./project-client";
+import { chooseStartupProjectId } from "./startup-project";
 import { ReferencePanel } from "./ReferencePanel";
 import { ProjectLibrary } from "./ProjectLibrary";
 
@@ -75,6 +76,7 @@ export function App() {
     () => localStorage.getItem("drama-theme") === "light",
   );
   const [project, setProject] = useState<Project | null>(null);
+  const [sessionReady, setSessionReady] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const activeId = useRef(localStorage.getItem("reelori-project") || "sample");
   const [selected, setSelected] = useState<string[]>([]);
@@ -150,14 +152,28 @@ export function App() {
   useEffect(() => {
     let active = true;
     api("session")
-      .then(() => projectApi("project"))
-      .then((p) => {
-        if (active) {
-          setProject(p);
-          setSelected(p.shots.map((s: Shot) => s.id));
+      .then(() => {
+        if (active) setSessionReady(true);
+        return api("projects") as Promise<{ id: string }[]>;
+      })
+      .then(async (projects) => {
+        const id = chooseStartupProjectId(activeId.current, projects);
+        if (!id) {
+          if (active) setLibraryOpen(true);
+          return null;
+        }
+        const p = (await api(`project?projectId=${encodeURIComponent(id)}`)) as Project;
+        return { id, p };
+      })
+      .then((result) => {
+        if (active && result) {
+          activeId.current = result.id;
+          localStorage.setItem("reelori-project", result.id);
+          setProject(result.p);
+          setSelected(result.p.shots.map((s) => s.id));
         }
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => { if (active) setError(e.message); });
     return () => {
       active = false;
     };
@@ -324,7 +340,7 @@ export function App() {
         <>
           <header className="landing-header">
             <button className="wordmark" onClick={() => go("home")}>
-              <FilmSlate weight="fill" size={28} />
+              <img className="brand-mark" src="/assets/reelori-mark.svg" alt="" width="28" height="28" />
               <span>
                 Reelori
                 <span className="wordmark-small">
@@ -363,7 +379,7 @@ export function App() {
                 <div className="hero-actions">
                   <button
                     className="primary large"
-                    disabled={!project}
+                    disabled={!sessionReady}
                     onClick={() => setLibraryOpen(true)}
                   >
                     {t("开始我的故事", "Start my story")}
@@ -465,7 +481,7 @@ export function App() {
         <div className="workspace">
           <aside className="sidebar">
             <button className="wordmark" onClick={() => go("home")}>
-              <FilmSlate size={29} weight="fill" />
+              <img className="brand-mark" src="/assets/reelori-mark.svg" alt="" width="29" height="29" />
               <span>
                 Reelori
                 <span className="wordmark-small">

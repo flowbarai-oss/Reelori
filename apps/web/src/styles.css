@@ -136,6 +136,13 @@ small,
   text-align: left;
   padding: 0;
 }
+.brand-mark {
+  flex: none;
+  display: block;
+  width: 29px;
+  height: 29px;
+  border-radius: 7px;
+}
 .wordmark-small {
   display: block;
   letter-spacing: 1.4px;

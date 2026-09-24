@@ -12,7 +12,7 @@ WORKDIR /app
 # 先只拷贝 lockfile 相关文件装依赖，能命中 Docker 层缓存，源码改动不用重装依赖。
 COPY package.json package-lock.json ./
 COPY apps/web/package.json apps/web/package.json
-RUN npm ci
+RUN ELECTRON_SKIP_BINARY_DOWNLOAD=1 npm ci
 
 COPY . .
 
