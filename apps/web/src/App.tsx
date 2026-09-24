@@ -63,6 +63,7 @@ const pages: Page[] = [
   "settings",
 ];
 const icons = [FilmSlate, Users, Eye, Clock, DownloadSimple, GearSix];
+type Appearance = "studio" | "light" | "dark";
 export function App() {
   const [page, setPage] = useState<Page>(() =>
     pages.includes(location.hash.slice(1) as Page)
@@ -72,9 +73,12 @@ export function App() {
   const [lang, setLang] = useState(
     () => localStorage.getItem("drama-lang") || "zh",
   );
-  const [light, setLight] = useState(
-    () => localStorage.getItem("drama-theme") === "light",
-  );
+  const [appearance, setAppearance] = useState<Appearance>(() => {
+    const saved = localStorage.getItem("drama-appearance");
+    if (saved === "studio" || saved === "light" || saved === "dark") return saved;
+    return localStorage.getItem("drama-theme") === "light" ? "light" : "studio";
+  });
+  const light = appearance === "light" || (appearance === "studio" && page === "results");
   const [project, setProject] = useState<Project | null>(null);
   const [sessionReady, setSessionReady] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
@@ -147,8 +151,9 @@ export function App() {
     localStorage.setItem("drama-lang", lang);
   }, [lang]);
   useEffect(() => {
+    localStorage.setItem("drama-appearance", appearance);
     localStorage.setItem("drama-theme", light ? "light" : "dark");
-  }, [light]);
+  }, [appearance, light]);
   useEffect(() => {
     let active = true;
     api("session")
@@ -314,7 +319,8 @@ export function App() {
       <button
         className="icon-button"
         aria-label={t("切换主题", "Switch theme")}
-        onClick={() => setLight(!light)}
+        aria-pressed={light}
+        onClick={() => setAppearance(light ? "dark" : "light")}
       >
         {light ? <Moon size={20} /> : <Sun size={20} />}
       </button>
@@ -323,7 +329,7 @@ export function App() {
   );
   return (
     <div
-      className={`app ${light ? "light" : ""} ${page === "results" ? "receipt-theme" : ""}`}
+      className={`app ${light ? "light" : ""}`}
     >
       <a className="skip" href="#main">
         {t("跳转到内容", "Skip to content")}

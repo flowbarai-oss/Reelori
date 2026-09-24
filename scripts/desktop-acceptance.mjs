@@ -108,7 +108,46 @@ try {
   await writeFile(mobileScreenshot, Buffer.from(mobileShot.data, 'base64'));
   await evaluate(`document.querySelector('button[aria-label="Switch language"]').click()`);
   await send('Emulation.clearDeviceMetricsOverride');
-  console.log(JSON.stringify({ startup, storyboard, screenshot, mobile, english, mobileScreenshot }, null, 2));
+  await evaluate('localStorage.removeItem("drama-appearance"); localStorage.setItem("drama-theme", "dark")');
+  await send('Page.reload', { ignoreCache: true });
+  await waitFor('document.querySelector(".storyboard-layout") !== null', 'storyboard after theme reset');
+  await evaluate('location.hash = "#results"');
+  await waitFor('document.querySelector(".results-layout") !== null', 'results page');
+  const resultsBefore = await evaluate('getComputedStyle(document.querySelector(".app")).backgroundColor');
+  assert.equal(resultsBefore, 'rgb(245, 243, 237)', 'Results should keep its editorial light default');
+  await evaluate('document.querySelector(".utility button:nth-child(2)").click()');
+  const resultsAfter = await evaluate('getComputedStyle(document.querySelector(".app")).backgroundColor');
+  assert.equal(resultsAfter, 'rgb(17, 18, 20)', 'Results theme switch must change the page');
+  await evaluate('location.hash = "#storyboard"');
+  await waitFor('document.querySelector(".storyboard-layout") !== null', 'storyboard after theme switch');
+  assert.equal(await evaluate('getComputedStyle(document.querySelector(".app")).backgroundColor'),
+    resultsAfter, 'Explicit theme should carry across pages');
+  await evaluate('location.hash = "#results"');
+  await waitFor('document.querySelector(".results-layout") !== null', 'results before reload');
+  await send('Page.reload', { ignoreCache: true });
+  await waitFor('document.querySelector(".results-layout") !== null', 'results after reload');
+  assert.equal(await evaluate('getComputedStyle(document.querySelector(".app")).backgroundColor'),
+    resultsAfter, 'Explicit theme should survive reload');
+  await evaluate('location.hash = ""');
+  await waitFor('document.querySelector(".hero-copy blockquote") !== null', 'home quote');
+  const quoteLines = await evaluate(`(() => {
+    const quote = document.querySelector('.hero-copy blockquote');
+    const node = [...quote.childNodes].find((item) => item.nodeType === Node.TEXT_NODE && item.textContent.trim());
+    const lines = new Map();
+    for (let i = 0; i < node.length; i++) {
+      if (!node.textContent[i].trim()) continue;
+      const range = document.createRange();
+      range.setStart(node, i);
+      range.setEnd(node, i + 1);
+      const y = Math.round(range.getBoundingClientRect().y);
+      lines.set(y, (lines.get(y) || '') + node.textContent[i]);
+    }
+    return [...lines.values()];
+  })()`);
+  assert.ok(quoteLines.length <= 1 || quoteLines.at(-1).length >= 4,
+    'Home quote must not end with a two-character orphan line');
+  console.log(JSON.stringify({ startup, storyboard, screenshot, mobile, english, mobileScreenshot,
+    resultsBefore, resultsAfter, quoteLines }, null, 2));
 } finally {
   socket.close();
 }

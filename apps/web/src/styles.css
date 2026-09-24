@@ -94,8 +94,7 @@ small,
   color: var(--text);
   min-height: 100vh;
 }
-.app.light,
-.app.receipt-theme {
+.app.light {
   --bg: #f5f3ed;
   --panel: #fff;
   --panel-hover: #e9ebe3;
@@ -106,6 +105,18 @@ small,
   --accent-text: #fff;
   --green: #49743e;
   color-scheme: light;
+}
+.app h1,
+.app h2,
+.app h3,
+.app p,
+.app blockquote,
+.review-check > small,
+.update-panel > small {
+  text-wrap: balance;
+}
+.update-panel > small {
+  display: block;
 }
 .muted,
 .fine {
