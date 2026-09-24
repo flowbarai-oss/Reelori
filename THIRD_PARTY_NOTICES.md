@@ -10,6 +10,7 @@ Third-party components retain their own licenses and trademarks.
 | Phosphor Icons React | Interface icons | MIT, dependency package license |
 | Noto Sans SC / Noto Serif SC | Bundled interface fonts | SIL Open Font License 1.1, font package licenses |
 | Node.js | Bundled Windows runtime | Full upstream `runtime/LICENSE` is included in the Windows package |
+| Electron and Chromium | Dedicated Windows desktop window | Upstream `desktop/LICENSE` and `desktop/LICENSES.chromium.html` are included in the Windows package |
 | FFmpeg | User-provided Windows media tool | Not bundled in the Windows package |
 
 The three example images under `public/assets/` were generated for this project
@@ -21,6 +22,7 @@ a real person or a third-party film still.
 The Windows package includes the upstream license text for the bundled React,
 React DOM, Scheduler, Phosphor Icons, and Noto font packages under
 `licenses/npm/`. Its pinned Node.js runtime includes `runtime/LICENSE`.
+The packaged desktop runtime retains Electron and Chromium license files.
 `package-lock.json` records the full source-build dependency tree. A Docker
 image that includes FFmpeg needs its own package and license inventory before
 distribution.

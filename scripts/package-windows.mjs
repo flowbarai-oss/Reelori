@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { cp, mkdir, readFile, writeFile, access } from 'node:fs/promises';
+import { cp, mkdir, readFile, writeFile, access, rename } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -10,6 +10,8 @@ const archiveName = `node-v${nodeVersion}-win-x64.zip`;
 const upstream = `https://nodejs.org/download/release/v${nodeVersion}`;
 const cache = path.join(root, 'dist', 'vendor-cache');
 const pkg = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8'));
+const electronVersion = pkg.devDependencies.electron;
+if (!/^\d+\.\d+\.\d+$/.test(electronVersion)) throw new Error('Electron version must be pinned');
 const suffix = process.env.REELORI_PACKAGE_SUFFIX?.trim() ?? '';
 if (suffix && !/^[a-z0-9-]{1,30}$/.test(suffix)) throw new Error('Invalid package suffix');
 const output = path.join(root, 'dist', `reelori-${pkg.version}-win-x64${suffix ? '-' + suffix : ''}`);
@@ -33,6 +35,10 @@ const actual = createHash('sha256').update(bytes).digest('hex');
 if (actual !== match[1]) throw new Error('Node archive SHA-256 mismatch');
 const client = path.join(root, 'apps', 'web', 'dist', 'client', 'index.html');
 await access(client); // npm run build must have completed first.
+const electronDist = path.join(root, 'node_modules', 'electron', 'dist');
+await access(path.join(electronDist, 'electron.exe'));
+const installedElectronVersion = (await readFile(path.join(electronDist, 'version'), 'utf8')).trim().replace(/^v/, '');
+if (installedElectronVersion !== electronVersion) throw new Error('Electron runtime version mismatch');
 try { await access(output); throw new Error(`Release directory already exists: ${output}`); }
 catch (error) { if (error.code !== 'ENOENT') throw error; }
 await mkdir(path.join(output, 'runtime'), { recursive: true });
@@ -66,22 +72,27 @@ for (const [name, target] of bundledLicenses) {
 await cp(path.join(root, 'docs/release/README-public.md'), path.join(output, 'README.md'));
 await mkdir(path.join(output, 'docs', 'release'), { recursive: true });
 await cp(path.join(root, 'docs/release/QUICKSTART.md'), path.join(output, 'docs/release/QUICKSTART.md'));
+await cp(electronDist, path.join(output, 'desktop'), { recursive: true });
+await rename(path.join(output, 'desktop', 'electron.exe'), path.join(output, 'desktop', 'Reelori.exe'));
+await mkdir(path.join(output, 'desktop', 'resources', 'app'), { recursive: true });
+await cp(path.join(root, 'apps', 'desktop', 'main.cjs'), path.join(output, 'desktop', 'resources', 'app', 'main.cjs'));
+await writeFile(path.join(output, 'desktop', 'resources', 'app', 'package.json'), JSON.stringify({
+  name: 'reelori-desktop', productName: '幕芽 Reelori', version: pkg.version, main: 'main.cjs',
+}, null, 2) + '\n');
+await cp(path.join(root, 'packaging', 'windows', 'Reelori.ico'), path.join(output, 'Reelori.ico'));
 await writeFile(path.join(output, 'package.json'), JSON.stringify({
   name: pkg.name, version: pkg.version, type: 'module', private: true,
 }, null, 2) + '\n');
 await writeFile(path.join(output, 'Start Reelori.cmd'), [
   '@echo off',
   'setlocal',
-  'set "REELORI_DATA_DIR=%LOCALAPPDATA%\\Reelori\\data"',
-  'set "REELORI_WORKSPACE_SELECTION_FILE=%LOCALAPPDATA%\\Reelori\\workspace-selection.json"',
-  'set "REELORI_OPEN_BROWSER=1"',
   'cd /d "%~dp0"',
-  '"%~dp0runtime\\node.exe" "%~dp0scripts\\start.mjs"',
+  '"%~dp0desktop\\Reelori.exe"',
   'exit /b %ERRORLEVEL%',
   '',
 ].join('\r\n'));
 await writeFile(path.join(output, 'RELEASE-METADATA.json'), JSON.stringify({
-  appVersion: pkg.version, nodeVersion, nodeArchive: archiveName,
+  appVersion: pkg.version, nodeVersion, electronVersion, nodeArchive: archiveName,
   nodeArchiveSha256: actual, sourceCommit: process.env.REELORI_SOURCE_SHA ?? null,
   generatedAt: new Date().toISOString(),
 }, null, 2) + '\n');

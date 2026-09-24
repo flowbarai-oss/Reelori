@@ -18,6 +18,8 @@ jobs:
         with:
           python-version: '3.11'
       - run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
       - run: node scripts/scan-secrets.mjs --history
       - run: npm run typecheck
       - run: npm run build

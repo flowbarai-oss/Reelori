@@ -7,3 +7,5 @@
 `docs/design/01–05` 是此前已交付并获用户批准的概念 UI，仅作开发参考，不作为运行页面背景。
 
 图标使用 @phosphor-icons/react；字体使用 @fontsource-variable/noto-sans-sc 和 noto-serif-sc。本地依赖包含各自许可文件。正式开源发行前需要汇总第三方 notices、项目代码许可证和生成素材使用说明；本说明不替代该发行门槛。
+
+`public/assets/reelori-mark.svg`、两种字标和 `packaging/windows/Reelori.ico` 是本项目原创的“取景框中萌芽”标识；Windows 图标由 `scripts/generate-reelori-icon.py` 基于同一造型绘制。它们仅代表 Reelori 产品，不作为 FlowBarAI 品牌标志。

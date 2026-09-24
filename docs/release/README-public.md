@@ -32,12 +32,14 @@ use `npm run dev` instead. Run `npm test` and `npm run typecheck` before a PR.
 ## Windows preview package / Windows 便携候选包
 
 The maintainers build this with `npm run package:windows` after `npm run build`.
-The package includes a pinned Node.js runtime and `SHA256SUMS.txt`; it stores
+The package includes pinned Node.js and Electron runtimes plus `SHA256SUMS.txt`; it stores
 projects outside the program directory in `%LOCALAPPDATA%\Reelori\data`.
-Double-click `Start Reelori.cmd`. Keep that window open while using the app.
-Use the workspace backup feature before moving or upgrading a package.
+Double-click `Start Reelori.cmd` to open a dedicated desktop window. The preview
+installer creates a Desktop shortcut. Back up the workspace before moving or
+upgrading; this preview installer requires uninstalling the old program first
+and preserves the data directory.
 
-维护者在构建后运行 `npm run package:windows`。候选包内含固定版本的 Node.js 运行时及 SHA-256 清单；作品保存在程序目录之外。正式安装器和自动升级尚未通过发行验收。
+维护者在构建后运行 `npm run package:windows`。候选包内含固定版本的 Node.js、Electron 运行时及 SHA-256 清单；作品保存在程序目录之外。安装器会创建桌面快捷方式；预览版升级需要先备份工作区并卸载旧程序，自动升级尚未开放。
 
 ## Model keys and privacy / 模型密钥与隐私
 

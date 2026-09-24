@@ -15,6 +15,8 @@ Unicode true
 
 Name "Reelori"
 OutFile "${OUTPUT_FILE}"
+Icon "${__FILEDIR__}\Reelori.ico"
+UninstallIcon "${__FILEDIR__}\Reelori.ico"
 InstallDir "$LOCALAPPDATA\Programs\Reelori"
 RequestExecutionLevel user
 SetCompressor /SOLID lzma
@@ -42,15 +44,18 @@ Section "Reelori" SecMain
   File /r "${PACKAGE_DIR}\*.*"
   SetOutPath "$INSTDIR"
   File "${__FILEDIR__}\Launch.ps1"
+  File "${__FILEDIR__}\Reelori.ico"
   FileOpen $0 "$INSTDIR\current.txt" w
   FileWrite $0 "${APP_VERSION}"
   FileClose $0
   WriteUninstaller "$INSTDIR\Uninstall.exe"
   CreateDirectory "$SMPROGRAMS\Reelori"
-  CreateShortCut "$SMPROGRAMS\Reelori\Reelori.lnk" "$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" '-NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\Launch.ps1"'
+  CreateShortCut "$SMPROGRAMS\Reelori\Reelori.lnk" "$INSTDIR\versions\${APP_VERSION}\desktop\Reelori.exe" "" "$INSTDIR\Reelori.ico"
+  CreateShortCut "$DESKTOP\Reelori.lnk" "$INSTDIR\versions\${APP_VERSION}\desktop\Reelori.exe" "" "$INSTDIR\Reelori.ico"
   CreateShortCut "$SMPROGRAMS\Reelori\Uninstall.lnk" "$INSTDIR\Uninstall.exe"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Reelori" "DisplayName" "Reelori"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Reelori" "DisplayVersion" "${APP_VERSION}"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Reelori" "DisplayIcon" "$INSTDIR\Reelori.ico"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Reelori" "UninstallString" '$"$INSTDIR\Uninstall.exe$"'
 SectionEnd
 
@@ -59,9 +64,11 @@ Section "Uninstall"
   StrCmp $INSTDIR "$LOCALAPPDATA\Programs\Reelori" +2 0
     Abort "Unsupported uninstall path"
   Delete "$SMPROGRAMS\Reelori\Reelori.lnk"
+  Delete "$DESKTOP\Reelori.lnk"
   Delete "$SMPROGRAMS\Reelori\Uninstall.lnk"
   RMDir "$SMPROGRAMS\Reelori"
   Delete "$INSTDIR\Launch.ps1"
+  Delete "$INSTDIR\Reelori.ico"
   Delete "$INSTDIR\current.txt"
   !include "${UNINSTALL_FILES}"
   Delete "$INSTDIR\Uninstall.exe"

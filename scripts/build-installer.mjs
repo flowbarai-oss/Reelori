@@ -21,7 +21,8 @@ for (const line of sums) {
   if (actual !== match[1]) throw new Error(`Package checksum mismatch: ${match[2]}`);
   files.push(match[2]);
 }
-if (!files.includes('runtime/node.exe') || !files.includes('LICENSE'))
+if (!files.includes('runtime/node.exe') || !files.includes('desktop/Reelori.exe') ||
+    !files.includes('Reelori.ico') || !files.includes('LICENSE'))
   throw new Error('Package is incomplete');
 const outputDir = path.join(root, 'dist', 'installers');
 await mkdir(outputDir, { recursive: true });
