@@ -4,6 +4,7 @@ import type { Project } from "../contracts/index.ts";
 import type { ProviderInput, ProviderJob, ProviderQuote } from "./contracts.ts";
 import { DomainError } from "../core/project.ts";
 import { validateAudioTracks } from "../core/audio.ts";
+import { productionPrompt } from "./prompt.ts";
 const check = (ok: unknown, message: string) => {
   if (!ok) throw new DomainError(message, 409);
 };
@@ -76,8 +77,9 @@ export function makeQuote(
   const s = p.shots.find((s) => s.id === shotId);
   check(s, "镜头不存在");
   check(amount(route.upperMicros) && route.upperMicros > 0, "需要可信费用上界");
-  const prompt = route.kind === "audio" ? s!.dialogue : s!.description;
+  const prompt = productionPrompt(p, s!, route.kind);
   check(prompt.trim(), route.kind === "audio" ? "该镜头没有对白，无法生成配音" : "镜头画面描述为空");
+  check(prompt.length <= 2000, "镜头与场景角色信息合并后超过 2000 字，请精简后重试");
   return {
     id: randomUUID(),
     input: {
@@ -125,8 +127,7 @@ export function reserveProvider(
   check(
     s &&
       s.revision === q.input.shotRevision &&
-      (q.input.kind === "audio" ? s.dialogue : s.description) ===
-        q.input.prompt &&
+      productionPrompt(p, s, q.input.kind) === q.input.prompt &&
       s.seconds === q.input.seconds &&
       p.referenceRevision === q.input.referenceRevision,
     "镜头或参考版本已变化",

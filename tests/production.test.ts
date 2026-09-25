@@ -6,6 +6,7 @@ import { confirmPreview, updateShot } from "../packages/core/project.ts";
 import { validateProject } from "../packages/storage-local/validate-project.ts";
 import { createApi } from "../apps/local-service/server.ts";
 import { client } from "./http-helper.ts";
+import { makeQuote, reserveProvider, setProviderBudget } from "../packages/providers/ledger.ts";
 
 test("scene and cast edits are versioned, survive storage and invalidate affected preview inputs", () => {
   const store = new Store(":memory:");
@@ -76,6 +77,48 @@ test("scene and character API persists assignments and rejects unknown reference
     validateProject(shot.data);
   } finally {
     await new Promise<void>((resolve) => server.close(() => resolve()));
+    store.close();
+  }
+});
+
+test("video quotes disclose assigned scene and cast text and reject stale context", () => {
+  const store = new Store(":memory:");
+  try {
+    const created = store.create({ title: "夜班", story: "摄影师走入车站" });
+    const project = store.transact((draft) => {
+      saveScene(draft, { name: "车站月台", location: "上海 · 雨夜", notes: "蓝色顶灯" }, draft.revision);
+      saveCharacter(draft, { name: "林夏", description: "短发，米色风衣" }, draft.revision);
+      updateShot(draft, draft.shots[0].id, {
+        sceneId: draft.scenes![1].id, characterIds: [draft.characters![0].id],
+        dialogue: "找到你了。",
+      }, draft.revision);
+      confirmPreview(draft, draft.revision);
+      setProviderBudget(draft, 1000000, draft.revision);
+    }, created.id);
+    const quote = makeQuote(project, project.shots[0].id, {
+      provider: "minimax", kind: "video", model: "MiniMax-H3",
+      size: "768P:9:16", upperMicros: 400000, pricingVersion: "fixture",
+    }, 100);
+    assert.match(quote.input.prompt, /车站月台/);
+    assert.match(quote.input.prompt, /上海 · 雨夜/);
+    assert.match(quote.input.prompt, /林夏/);
+    assert.match(quote.input.prompt, /米色风衣/);
+    const audio = makeQuote(project, project.shots[0].id, {
+      provider: "aliyun", kind: "audio", model: "voice", size: "tts",
+      upperMicros: 1000, pricingVersion: "fixture",
+    }, 100);
+    assert.equal(audio.input.prompt, project.shots[0].dialogue);
+    const changed = store.transact((draft) => {
+      saveScene(draft, { ...draft.scenes![1], notes: "暖色顶灯" }, draft.revision);
+    }, created.id);
+    assert.throws(() => reserveProvider(changed, quote, "stale-scene-operation", changed.revision, 101), /镜头或参考版本已变化/);
+    const oversized = structuredClone(changed);
+    oversized.shots[0].description = "x".repeat(1990);
+    assert.throws(() => makeQuote(oversized, oversized.shots[0].id, {
+      provider: "minimax", kind: "video", model: "MiniMax-H3",
+      size: "768P:9:16", upperMicros: 400000, pricingVersion: "fixture",
+    }, 100), /超过 2000 字/);
+  } finally {
     store.close();
   }
 });

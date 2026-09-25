@@ -10,7 +10,7 @@ clips, one music track and one effect. Music may cover the full 60 seconds.
 
 幕芽 Reelori 是本地优先的单人 AI 短片创作工作台。可整理剧本、编辑分镜、预演节奏、接入自有模型密钥、人工采纳候选，并导出成片、字幕与素材清单。
 单部短片最多 8 镜、60 秒，可编排 12 段配音、1 段背景音乐及 1 段音效；背景音乐可覆盖整片。
-项目库可从现有故事创建下一集；分镜可关联场景和角色。单集备份恢复为独立项目，完整工作区归档保留剧集关系。参考图仍只用于人工复核，尚不提交给模型。
+项目库可从现有故事创建下一集；分镜可关联场景和角色，报价会展示将发送的场景与角色文字。单集备份恢复为独立项目，完整工作区归档保留剧集关系。参考图仍只用于人工复核，尚不提交给模型。
 
 **Status / 状态：** community preview under preparation. The source build is
 available for development; a verified Windows installer and Docker image are

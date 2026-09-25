@@ -1,6 +1,6 @@
 # Series, scene and cast foundation
 
-Source milestone: `0.4.0-preview.7`. The Windows installer remains on the
+Source milestone: `0.4.0-preview.8`. The Windows installer remains on the
 previous verified build; packaging is deferred until the planned features are
 complete.
 
@@ -20,7 +20,9 @@ scene and cast metadata. Existing projects without these fields continue to
 load. A single-episode backup restores as a standalone project, while a full
 workspace archive retains series links.
 
-These records organize the creative work but do not yet submit reference images
-to a model, guarantee visual continuity, or lift the 60-second per-episode
-rendering limit. The next integration step is explicit reference-aware
+New image/video quotes display the assigned scene and cast text that will be
+sent to the selected provider after budget confirmation. Voice quotes continue
+to use dialogue only. Reference images are not yet submitted to a model; these
+records do not guarantee visual continuity or lift the 60-second per-episode
+rendering limit. The next integration step is explicit reference-image
 generation with provider-specific capability checks and price confirmation.
