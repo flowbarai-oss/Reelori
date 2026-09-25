@@ -89,6 +89,6 @@ export function ProductionPanel({ project, lang, busy, save }: {
         </form>
       </section>
     </div>
-    <p className="fine">{t("在镜头编辑中指定场景和出场角色。参考图目前仅供人工对照，尚不会发送给生成模型。", "Assign scenes and cast in each shot. Reference images still support human review only; they are not yet sent to the model.")}</p>
+    <p className="fine">{t("新报价会显示并发送镜头所选场景与角色的文字资料；参考图片目前仅供人工对照，不会发送给模型。", "New quotes show and send the assigned scene and cast text. Reference images remain for human review and are not sent to the model.")}</p>
   </details>;
 }
