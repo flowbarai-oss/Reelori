@@ -14,8 +14,9 @@ not yet published. Never expose the local service to a network.
 
 ## Run from source / 源码运行
 
-Requires Node.js 24.12+ and FFmpeg with H.264 support. FFmpeg is not bundled.
-需要 Node.js 24.12+ 和支持 H.264 的 FFmpeg；仓库不附带 FFmpeg。
+Source mode requires Node.js 24.12+ and FFmpeg with H.264 support. The source
+repository does not contain the FFmpeg binary.
+源码模式需要 Node.js 24.12+ 和支持 H.264 的 FFmpeg；源码仓库不附带 FFmpeg 可执行文件。
 
 ```text
 npm ci
@@ -32,14 +33,15 @@ use `npm run dev` instead. Run `npm test` and `npm run typecheck` before a PR.
 ## Windows preview package / Windows 便携候选包
 
 The maintainers build this with `npm run package:windows` after `npm run build`.
-The package includes pinned Node.js and Electron runtimes plus `SHA256SUMS.txt`; it stores
+The package includes pinned Node.js and Electron runtimes, a pinned FFmpeg 9.0.2
+GPL build, its upstream license and build provenance, plus `SHA256SUMS.txt`; it stores
 projects outside the program directory in `%LOCALAPPDATA%\Reelori\data`.
 Double-click `Start Reelori.cmd` to open a dedicated desktop window. The preview
 installer creates a Desktop shortcut. Back up the workspace before moving or
 upgrading; this preview installer requires uninstalling the old program first
 and preserves the data directory.
 
-维护者在构建后运行 `npm run package:windows`。候选包内含固定版本的 Node.js、Electron 运行时及 SHA-256 清单；作品保存在程序目录之外。安装器会创建桌面快捷方式；预览版升级需要先备份工作区并卸载旧程序，自动升级尚未开放。
+维护者在构建后运行 `npm run package:windows`。候选包内含固定版本的 Node.js、Electron、FFmpeg 9.0.2（GPL）及 SHA-256 清单；作品保存在程序目录之外。安装器会创建桌面快捷方式；预览版升级需要先备份工作区并卸载旧程序，自动升级尚未开放。公开二进制发行还需完成 FFmpeg 对应源码包核验。
 
 ## Model keys and privacy / 模型密钥与隐私
 

@@ -1,5 +1,6 @@
 const { app, BrowserWindow, dialog, Menu, session, shell } = require('electron');
 const { spawn } = require('node:child_process');
+const { existsSync } = require('node:fs');
 const http = require('node:http');
 const net = require('node:net');
 const path = require('node:path');
@@ -9,6 +10,7 @@ const apiPort = 4312;
 const webPort = 5179;
 const origin = `http://127.0.0.1:${webPort}`;
 const runtime = path.join(root, 'runtime', 'node.exe');
+const bundledFfmpeg = path.join(root, 'vendor', 'ffmpeg', 'ffmpeg.exe');
 const icon = path.join(root, 'Reelori.ico');
 const children = [];
 let window = null;
@@ -57,6 +59,8 @@ function allowedExternal(value) {
 }
 
 async function start() {
+  if (!existsSync(bundledFfmpeg))
+    throw new Error('安装包缺少 FFmpeg，请重新下载完整的 Reelori 安装包。');
   if (await occupied(apiPort) || await occupied(webPort) ||
       await occupied(4311) || await occupied(5178))
     throw new Error('已有 Reelori 本机服务或占用端口的程序在运行，请关闭后重试。');
@@ -69,6 +73,7 @@ async function start() {
     REELORI_PORT: String(apiPort),
     REELORI_WEB_PORT: String(webPort),
     REELORI_OPEN_BROWSER: '0',
+    REELORI_FFMPEG: bundledFfmpeg,
   };
   children.push(spawn(runtime, ['apps/local-service/server.ts'],
     { cwd: root, env, windowsHide: true, stdio: 'ignore' }));

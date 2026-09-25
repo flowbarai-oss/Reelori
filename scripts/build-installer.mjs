@@ -22,7 +22,10 @@ for (const line of sums) {
   files.push(match[2]);
 }
 if (!files.includes('runtime/node.exe') || !files.includes('desktop/Reelori.exe') ||
-    !files.includes('Reelori.ico') || !files.includes('LICENSE'))
+    !files.includes('Reelori.ico') || !files.includes('LICENSE') ||
+    !files.includes('vendor/ffmpeg/ffmpeg.exe') ||
+    !files.includes('vendor/ffmpeg/LICENSE') ||
+    !files.includes('vendor/ffmpeg/UPSTREAM-README.txt'))
   throw new Error('Package is incomplete');
 const outputDir = path.join(root, 'dist', 'installers');
 await mkdir(outputDir, { recursive: true });
