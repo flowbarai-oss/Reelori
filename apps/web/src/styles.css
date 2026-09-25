@@ -2354,6 +2354,12 @@ dialog::backdrop {
 .provider-panel .model-route-check input { width:18px; height:18px; min-height:18px; flex:none; margin:0; }
 @media(max-width:650px) { .model-route-item { align-items:flex-start; flex-direction:column; } .model-route-fields { grid-template-columns:1fr; } .model-route-manager { padding:14px; } }
 .provider-image { display:block; width:100%; max-width:320px; height:auto; border-radius:12px; margin:12px 0; }
+.provider-reference-review { display:flex; align-items:center; gap:14px; margin:10px 0; }
+.provider-reference-review img { width:96px; height:116px; object-fit:cover; border-radius:8px; flex:none; }
+.provider-reference-review p { margin:0; }
+.provider-panel .provider-reference-consent { display:flex; align-items:flex-start; gap:10px; line-height:1.5; }
+.provider-panel .provider-reference-consent input { width:18px; height:18px; min-height:18px; flex:none; margin:3px 0 0; }
+@media (max-width:520px) { .provider-reference-review { align-items:flex-start; } .provider-reference-review img { width:72px; height:90px; } }
 .share-card-controls { display:grid; gap:12px; margin:20px 0; padding:18px; border:1px solid var(--line); border-radius:14px; }
 .share-card-controls label { display:flex; align-items:center; gap:8px; }
 .film-share-card { width:100%; max-width:270px; height:auto; border-radius:12px; }

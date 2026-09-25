@@ -32,8 +32,8 @@ export function ReferencePanel({
           <h3>{t("上传新参考版本", "Upload a new reference")}</h3>
           <p className="fine">
             {t(
-              "替换后，全部镜头须重新确认预演、生成并复核。旧参考和候选保留。当前示例生成不使用上传图片合成新画面。",
-              "Replacing a reference requires reconfirmation, regeneration and review. History stays intact. Sample generation does not synthesize images from your upload.",
+              "上传新参考后，需重新确认预演并复核新候选；旧参考和候选保留。仅当你在 MiniMax 中国端点 H3 报价中选中图片并确认授权时，才会发送该图；内置示例生成不会使用上传图。",
+              "A new reference requires a fresh animatic confirmation and candidate review; earlier versions remain. Your image is sent only if you select it in a MiniMax CN H3 quote and confirm your rights. Sample generation does not use uploads.",
             )}
           </p>
           <form

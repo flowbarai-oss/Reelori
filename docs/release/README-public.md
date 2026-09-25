@@ -64,10 +64,13 @@ The FlowBar route uses `https://api.flowbarai.com/v1`; get a key from
   twelve voices, music, effect and a delivery ZIP. A local 1920x1080 source
   stress test passed; performance on other Windows machines remains unverified.
 - Series links, scenes and cast organize episodes; multi-minute rendering and
-  reference-aware generation remain in development. See [series and cast scope](docs/release/SERIES-SCENE-CAST-20260925.md).
-- Text-to-image, text-to-video and TTS routes have been exercised; reference
-  images are recorded locally but are **not** sent to model providers.
-- Image-to-video, multi-reference, first/last-frame control, remote access,
+  multi-shot identity control remain in development. See [series and cast scope](docs/release/SERIES-SCENE-CAST-20260925.md).
+- Text-to-image, text-to-video and TTS routes have been exercised. MiniMax CN H3
+  now supports one explicitly selected local reference image per five-second
+  video quote. Its upstream protocol passed one paid direct test; the product
+  UI-to-provider paid flow has not yet been independently accepted. See the
+  [source milestone](docs/release/H3-REFERENCE-PREVIEW9-20260925.md).
+- Other image-to-video routes, multi-reference, first/last-frame control, remote access,
   hosted accounts and automatic upgrades are not supported.
 - Provider reservations are local estimates, not a verified supplier invoice.
 - Windows is the currently tested development platform. Docker remains a

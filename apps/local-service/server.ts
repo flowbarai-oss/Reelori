@@ -37,6 +37,7 @@ import {
 import type { Adapter } from "../../packages/providers/worker.ts";
 import { FlowBarAdapter } from "../../packages/providers/flowbar.ts";
 import { MiniMaxAdapter } from "../../packages/providers/minimax.ts";
+import { readH3Reference } from "../../packages/providers/h3-reference.ts";
 import { AliyunTtsAdapter } from "../../packages/providers/aliyun-tts.ts";
 import { adoptProviderAudio } from "../../packages/providers/ledger.ts";
 import {setSubtitles} from '../../packages/core/subtitles.ts';
@@ -427,7 +428,11 @@ export function createApi(
         const p = store.get(projectId);
         if (p.revision !== body.revision)
           throw new DomainError("项目版本已变化", 409);
-        const quote = makeQuote(p, body.shotId, route);
+        const quote = makeQuote(p, body.shotId, route, Date.now(), body.referenceId);
+        if (quote.input.referenceImage) {
+          try { await readH3Reference(assetDir, quote.input.referenceImage); }
+          catch { throw new DomainError("参考图文件缺失、已变化或不符合 H3 尺寸要求（256–5760 像素，宽高比 0.4–2.5）", 409); }
+        }
         quote.expiresAt = Math.min(quote.expiresAt, route.expiresAt);
         if (quote.input.provider === "minimax-cn")
           minimaxCNAdapter.validate(quote.input);
@@ -455,6 +460,8 @@ export function createApi(
               ? previous.quote
               : undefined;
         if (!quote) throw new DomainError("报价失效，请重新查看报价", 409);
+        if (quote.input.referenceImage && body.referenceConsent !== true)
+          throw new DomainError("发送参考图前须明确确认图片使用权", 409);
         if (!keyFor(quote.input.provider) || !providerConfig.enabled)
           throw new DomainError("模型连接未配置", 409);
         const next = store.transact(
