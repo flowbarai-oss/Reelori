@@ -51,7 +51,8 @@ test("H3 CN sends one reference image only when the frozen input and trusted byt
   await adapter.submit(input, bytes);
   assert.deepEqual(body.content, [
     { type: "text", text: input.prompt },
-    { type: "image_url", role: "reference_image", image_url: "data:image/png;base64," + bytes.toString("base64") },
+    // Matches the nested image_url shape of the accepted MiniMax CN live request.
+    { type: "image_url", role: "reference_image", image_url: { url: "data:image/png;base64," + bytes.toString("base64") } },
   ]);
   assert.throws(() => adapter.validate({ ...input, referenceImage: "https://example.com/image.png" }), /unsupported_h3_spec/);
 });
