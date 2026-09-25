@@ -41,6 +41,7 @@ import { AliyunTtsAdapter } from "../../packages/providers/aliyun-tts.ts";
 import { adoptProviderAudio } from "../../packages/providers/ledger.ts";
 import {setSubtitles} from '../../packages/core/subtitles.ts';
 import {reorderShots,trimShot} from '../../packages/core/timeline.ts';
+import { saveScene, saveCharacter } from '../../packages/core/production.ts';
 import { createAliyunTokenManager } from "../../packages/providers/aliyun-token.ts";
 import {
   makeQuote,
@@ -664,6 +665,12 @@ export function createApi(
         switch (url.pathname) {
           case "/api/shot":
             updateShot(p, body.id, body.patch, body.revision);
+            break;
+          case "/api/scene":
+            saveScene(p, body.scene, body.revision);
+            break;
+          case "/api/character":
+            saveCharacter(p, body.character, body.revision);
             break;
           case "/api/shot-order":
             reorderShots(p, body.ids, body.revision);

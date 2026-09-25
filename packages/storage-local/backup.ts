@@ -190,10 +190,12 @@ export async function restoreBackup(
   };
   for (const p of archive.revisions) {
     p.id = id;
+    delete p.series;
     remap(p);
   }
   const p = archive.project;
   p.id = id;
+  delete p.series;
   remap(p);
   p.revision++;
   p.paused = true;

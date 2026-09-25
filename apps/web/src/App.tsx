@@ -37,6 +37,7 @@ import { createProjectClient } from "./project-client";
 import { chooseStartupProjectId } from "./startup-project";
 import { ReferencePanel } from "./ReferencePanel";
 import { ProjectLibrary } from "./ProjectLibrary";
+import { ProductionPanel } from "./ProductionPanel";
 
 const money = (cents: number) => `¥${(cents / 100).toFixed(2)}`;
 async function api(path: string, body?: unknown) {
@@ -541,7 +542,9 @@ export function App() {
                   {project?.title || t("正在打开项目", "Opening project")}
                 </span>
                 <span className="slash">/</span>
-                <span className="muted">{t("第一集", "Episode 01")}</span>
+                <span className="muted">{project?.series
+                  ? `${project.series.title} · ${t(`第 ${project.series.episode} 集`, `Episode ${String(project.series.episode).padStart(2, "0")}`)}`
+                  : t("独立故事", "Standalone story")}</span>
               </div>
               {controls}
             </header>
@@ -669,6 +672,12 @@ export function App() {
                                 <div className="tags">
                                   <span>{s.frame}</span>
                                   <span>{s.seconds} s</span>
+                                  {s.sceneId && <span>{lang === "zh"
+                                    ? project.scenes?.find((scene) => scene.id === s.sceneId)?.name
+                                    : project.scenes?.find((scene) => scene.id === s.sceneId)?.name.replace(/^场景 (\d+)$/, "Scene $1")}</span>}
+                                  {(s.characterIds ?? []).map((id) => <span key={id}>
+                                    {project.characters?.find((character) => character.id === id)?.name}
+                                  </span>)}
                                   {s.locked && (
                                     <span
                                       title={t("台词已锁定", "Dialogue locked")}
@@ -700,6 +709,7 @@ export function App() {
                           ))}
                         </section>
                         <aside className="inspector">
+                          <ProductionPanel project={project} lang={lang} busy={busy} save={mutate} />
                           <section className="panel reference">
                             <div className="row">
                               <h2>{t("角色参考", "Character reference")}</h2>
@@ -1594,6 +1604,8 @@ export function App() {
                       seconds: edit.seconds,
                       frame: edit.frame,
                       locked: edit.locked,
+                      sceneId: edit.sceneId ?? null,
+                      characterIds: edit.characterIds ?? [],
                     },
                   })
                 ) {
@@ -1641,6 +1653,26 @@ export function App() {
                   }
                 />
               </label>
+              <label>
+                {t("所属场景", "Scene")}
+                <select value={edit.sceneId ?? ""} onChange={(e) =>
+                  setEdit({ ...edit, sceneId: e.target.value || undefined })}>
+                  <option value="">{t("未分场", "Unassigned")}</option>
+                  {(project?.scenes ?? []).map((scene) => <option key={scene.id} value={scene.id}>
+                    {lang === "zh" ? scene.name : scene.name.replace(/^场景 (\d+)$/, "Scene $1")}{scene.location ? ` · ${scene.location}` : ""}
+                  </option>)}
+                </select>
+              </label>
+              {!!project?.characters?.length && <fieldset className="shot-cast">
+                <legend>{t("出场角色", "Characters in shot")}</legend>
+                {project.characters.map((character) => <label key={character.id}>
+                  <input type="checkbox" checked={(edit.characterIds ?? []).includes(character.id)}
+                    onChange={(e) => setEdit({ ...edit, characterIds: e.target.checked
+                      ? [...(edit.characterIds ?? []), character.id]
+                      : (edit.characterIds ?? []).filter((id) => id !== character.id) })} />
+                  {character.name}
+                </label>)}
+              </fieldset>}
               <div className="form-row">
                 <label>
                   {t("时长（秒）", "Duration (seconds)")}

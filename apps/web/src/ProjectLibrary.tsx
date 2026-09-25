@@ -7,7 +7,7 @@ import {
   UploadSimple,
 } from "@phosphor-icons/react";
 import type { Project } from "../../../packages/contracts/index.ts";
-type Item = { id: string; title: string; story: string };
+type Item = { id: string; title: string; story: string; series?: { id: string; title: string; episode: number } };
 export function ProjectLibrary({
   open,
   onClose,
@@ -28,9 +28,13 @@ export function ProjectLibrary({
   const [title, setTitle] = useState("");
   const [story, setStory] = useState("");
   const [source, setSource] = useState("");
+  const [seriesFromProjectId, setSeriesFromProjectId] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const t = (zh: string, en: string) => (lang === "zh" ? zh : en);
+  const seriesChoices = items.filter((item, index) =>
+    !item.series || items.findIndex((other) => other.series?.id === item.series?.id) === index,
+  );
   useEffect(() => {
     if (open) {
       ref.current?.showModal();
@@ -81,6 +85,9 @@ export function ProjectLibrary({
                 >
                   <span>
                     <strong>{item.title}</strong>
+                    {item.series && <small className="series-caption">
+                      {item.series.title} · {t(`第 ${item.series.episode} 集`, `Episode ${item.series.episode}`)}
+                    </small>}
                     <small>{item.story}</small>
                   </span>
                   {item.id === activeId ? (
@@ -102,11 +109,13 @@ export function ProjectLibrary({
                   title,
                   story,
                   sourceName: source || "pasted",
+                  ...(seriesFromProjectId ? { seriesFromProjectId } : {}),
                 });
                 onSelect(p);
                 setTitle("");
                 setStory("");
                 setSource("");
+                setSeriesFromProjectId("");
                 onClose();
               } catch (e) {
                 setError((e as Error).message);
@@ -117,8 +126,20 @@ export function ProjectLibrary({
           >
             <h3>
               <Plus size={20} />
-              {t("新建故事", "New story")}
+              {t("新建故事或下一集", "New story or episode")}
             </h3>
+            <label>
+              {t("所属剧集", "Series")}
+              <select value={seriesFromProjectId} onChange={(e) => setSeriesFromProjectId(e.target.value)}>
+                <option value="">{t("独立故事", "Standalone story")}</option>
+                {seriesChoices.map((item) => <option key={item.id} value={item.id}>
+                  {item.series?.title ?? item.title} · {t("创建下一集", "Create next episode")}
+                </option>)}
+              </select>
+            </label>
+            {seriesFromProjectId && <p className="fine">
+              {t("新一集会继承已确认的参考图，不复制上一集的镜头、任务和费用。", "The new episode reuses confirmed reference versions, without copying shots, jobs or costs.")}
+            </p>}
             <label>
               {t("项目名称", "Project name")}
               <input

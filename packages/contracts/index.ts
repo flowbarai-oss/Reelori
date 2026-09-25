@@ -22,6 +22,8 @@ export interface Candidate {
 }
 export interface Shot {
   id: string;
+  sceneId?: string;
+  characterIds?: string[];
   clipStartSeconds?: number;
   sourceSeconds?: number;
   title: string;
@@ -55,9 +57,31 @@ export interface Snapshot {
   inputRevision: number;
   referenceRevision: number;
   shots: Shot[];
+  scenes?: Scene[];
+  characters?: Character[];
   createdAt: number;
 }
+export interface SeriesLink {
+  id: string;
+  title: string;
+  episode: number;
+}
+export interface Scene {
+  id: string;
+  name: string;
+  location: string;
+  notes: string;
+}
+export interface Character {
+  id: string;
+  name: string;
+  description: string;
+  referenceId?: string;
+}
 export interface Project {
+  series?: SeriesLink;
+  scenes?: Scene[];
+  characters?: Character[];
   subtitleCues?: SubtitleCue[];
   subtitleRevision?: number;
   audioTracks?: AudioTrack[];
@@ -102,9 +126,9 @@ export interface ReferenceVersion {
 export type ShotPatch = Partial<
   Pick<
     Shot,
-    "title" | "description" | "dialogue" | "seconds" | "frame" | "locked"
+    "title" | "description" | "dialogue" | "seconds" | "frame" | "locked" | "characterIds"
   >
->;
+> & { sceneId?: string | null };
 export interface Summary {
   settledCents: number;
   reservedCents: number;

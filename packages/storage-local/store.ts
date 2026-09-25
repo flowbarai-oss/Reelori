@@ -100,6 +100,7 @@ export class Store {
           id: p.id,
           title: p.title,
           story: p.story.slice(0, 120),
+          series: p.series,
           revision: p.revision,
           createdAt: p.createdAt ?? 0,
         };
@@ -109,6 +110,7 @@ export class Store {
     title: string;
     story: string;
     sourceName?: string;
+    seriesFromProjectId?: string;
   }): Project {
     if (
       typeof input.title !== "string" ||
@@ -128,12 +130,19 @@ export class Store {
       (typeof input.sourceName !== "string" || input.sourceName.length > 255)
     )
       throw new DomainError("文件名无效");
+    if (input.seriesFromProjectId !== undefined &&
+      (typeof input.seriesFromProjectId !== "string" ||
+        !/^[a-zA-Z0-9_-]{1,100}$/.test(input.seriesFromProjectId)))
+      throw new DomainError("来源项目标识无效");
     const p = seedProject();
     p.id = randomUUID();
     p.title = input.title.trim();
     p.story = input.story;
     p.sourceName = input.sourceName ?? "pasted";
     p.createdAt = Date.now();
+    const firstScene = { id: randomUUID(), name: "场景 1", location: "", notes: "" };
+    p.scenes = [firstScene];
+    p.characters = [];
     const paragraphs = input.story.trim().split(/\r?\n\s*\r?\n/);
     const lines = input.story
       .trim()
@@ -146,6 +155,8 @@ export class Store {
     p.shots = Array.from({ length: count }, (_, i) => ({
       ...seedProject().shots[i % 3],
       id: randomUUID(),
+      sceneId: firstScene.id,
+      characterIds: [],
       title: `镜头 ${String(i + 1).padStart(2, "0")}`,
       description:
         parts.length <= MAX_FILM_SHOTS && (parts[i]?.length ?? 0) <= 2000
@@ -156,6 +167,25 @@ export class Store {
     }));
     this.db.exec("BEGIN IMMEDIATE");
     try {
+      if (input.seriesFromProjectId) {
+        const source = this.get(input.seriesFromProjectId);
+        const series = source.series ?? {
+          id: randomUUID(), title: source.title, episode: 1,
+        };
+        const lastEpisode = Math.max(series.episode, ...this.list()
+          .filter((item) => item.series?.id === series.id)
+          .map((item) => item.series!.episode));
+        if (lastEpisode >= 100) throw new DomainError("同一剧集最多 100 集", 409);
+        if (!source.series) {
+          source.series = series;
+          source.revision++;
+          this.save(source);
+        }
+        p.series = { ...series, episode: lastEpisode + 1 };
+        p.references = structuredClone(source.references ?? []);
+        p.referenceRevision = source.referenceRevision;
+        p.characters = structuredClone(source.characters ?? []);
+      }
       this.save(p);
       this.db.exec("COMMIT");
       return p;

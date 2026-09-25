@@ -646,6 +646,29 @@ progress::-webkit-progress-value {
   background: var(--panel);
   padding: 20px;
 }
+.production-panel { padding: 14px; min-width: 0; }
+.production-panel > summary {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  cursor: pointer; font-size: 13px;
+}
+.production-panel > summary span { color: var(--muted); font-size: 11px; white-space: nowrap; }
+.production-columns { display: grid; gap: 18px; padding-top: 15px; }
+.production-columns section { min-width: 0; }
+.production-columns h3 { display: flex; align-items: center; gap: 6px; font-size: 13px; margin: 0 0 9px; }
+.production-items { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.production-items button { display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 7px; background: transparent; color: inherit; font-size: 11px; }
+.production-panel form label { display: grid; gap: 5px; font-size: 11px; margin: 9px 0; }
+.production-panel form input, .production-panel form select, .production-panel form textarea {
+  box-sizing: border-box; width: 100%; min-width: 0; padding: 8px; border-radius: 7px;
+  border: 1px solid var(--line); background: var(--panel); color: inherit; font: inherit;
+}
+.production-actions { display: flex; gap: 7px; justify-content: flex-end; }
+.production-actions button { min-height: 34px; padding: 6px 9px; font-size: 11px; }
+.production-panel > .fine { margin: 12px 0 0; }
+.shot-cast { border: 1px solid var(--line); border-radius: 8px; margin: 12px 0; padding: 9px 12px; }
+.shot-cast legend { font-size: 12px; }
+.shot-cast label { display: inline-flex; align-items: center; gap: 6px; margin: 4px 12px 4px 0; }
+.shot-cast input { width: auto; }
 .reference {
   padding: 15px;
 }
@@ -1461,6 +1484,8 @@ dialog::backdrop {
     grid-template-columns: 1fr 1fr;
     gap: 15px;
   }
+  .production-panel { grid-column: 1 / -1; }
+  .production-columns { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .reference > img {
     height: 160px;
     aspect-ratio: auto;
@@ -1525,6 +1550,7 @@ dialog::backdrop {
   }
 }
 @media (max-width: 650px) {
+  .production-columns { grid-template-columns: 1fr; }
   .landing-header {
     height: 73px;
     padding: 0 6%;
@@ -2065,6 +2091,12 @@ dialog::backdrop {
 .project-item small {
   display: block;
 }
+.project-item .series-caption {
+  opacity: 0.82;
+  color: var(--accent);
+  font-weight: 600;
+  margin-top: 5px;
+}
 .project-item small {
   opacity: 0.6;
   font-size: 12px;
@@ -2081,6 +2113,7 @@ dialog::backdrop {
   margin: 14px 0;
 }
 .library-grid input:not([type="file"]),
+.library-grid select,
 .library-grid textarea {
   box-sizing: border-box;
   width: 100%;
