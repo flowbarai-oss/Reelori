@@ -51,8 +51,8 @@ export function RuntimePanel({
       "Check export directory permissions and temporary-file cleanup.",
     ),
     space: t(
-      "建议至少保留 512 MiB 空间；实际需求取决于作品。",
-      "Keep at least 512 MiB free; actual needs depend on the project.",
+      "建议至少保留 1 GiB 空间；实际需求取决于作品。",
+      "Keep at least 1 GiB free; actual needs depend on the project.",
     ),
     encoder: t(
       "请配置支持 libx264 的 FFmpeg，详见项目启动说明。",

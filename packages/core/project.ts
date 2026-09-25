@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { MAX_FILM_SECONDS, MAX_FILM_SHOTS } from "./film-limits.ts";
 import type {
   Project,
   ShotPatch,
@@ -155,9 +156,9 @@ export function updateShot(
     p.shots.reduce(
       (n, s) => n + (s.id === id ? (patch.seconds ?? s.seconds) : s.seconds),
       0,
-    ) > 30
+    ) > MAX_FILM_SECONDS
   )
-    throw new DomainError("首版预演总时长不能超过 30 秒");
+    throw new DomainError("成片总时长不能超过 60 秒");
   const contentChanged = Object.entries(patch).some(
     ([key, value]) =>
       key !== "locked" && shot[key as keyof typeof shot] !== value,
@@ -194,7 +195,7 @@ export function queueSample(
   if (
     !Array.isArray(ids) ||
     !ids.length ||
-    ids.length > 6 ||
+    ids.length > MAX_FILM_SHOTS ||
     new Set(ids).size !== ids.length ||
     ids.some((id) => !p.shots.some((s) => s.id === id))
   )
@@ -221,7 +222,7 @@ export function queueSample(
   if (
     !Array.isArray(ids) ||
     !ids.length ||
-    ids.length > 6 ||
+    ids.length > MAX_FILM_SHOTS ||
     new Set(ids).size !== ids.length ||
     ids.some((id) => !p.shots.some((s) => s.id === id))
   )

@@ -5,8 +5,11 @@ Official source / 官方源码：[flowbarai-oss/Reelori](https://github.com/flow
 Reelori is a local-first, single-user short film workspace. It lets you organize
 a story into shots, preview timing, generate or import media, review candidates,
 edit subtitles and audio, and export a short film with its source manifest.
+An individual film supports up to eight shots and 60 seconds, with twelve voice
+clips, one music track and one effect. Music may cover the full 60 seconds.
 
 幕芽 Reelori 是本地优先的单人 AI 短片创作工作台。可整理剧本、编辑分镜、预演节奏、接入自有模型密钥、人工采纳候选，并导出成片、字幕与素材清单。
+单部短片最多 8 镜、60 秒，可编排 12 段配音、1 段背景音乐及 1 段音效；背景音乐可覆盖整片。
 
 **Status / 状态：** community preview under preparation. The source build is
 available for development; a verified Windows installer and Docker image are
@@ -56,6 +59,9 @@ The FlowBar route uses `https://api.flowbarai.com/v1`; get a key from
 
 ## Current limits / 当前边界
 
+- The 60-second mixed-media path is tested with eight video sources, subtitles,
+  twelve voices, music, effect and a delivery ZIP. A local 1920x1080 source
+  stress test passed; performance on other Windows machines remains unverified.
 - Text-to-image, text-to-video and TTS routes have been exercised; reference
   images are recorded locally but are **not** sent to model providers.
 - Image-to-video, multi-reference, first/last-frame control, remote access,

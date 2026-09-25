@@ -2,6 +2,7 @@
 import { existsSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { DomainError, seedProject, tick } from "../core/project.ts";
+import { MAX_FILM_SHOTS } from "../core/film-limits.ts";
 import type { Project } from "../contracts/index.ts";
 export class Store {
   db: DatabaseSync;
@@ -141,13 +142,13 @@ export class Store {
       .filter(Boolean);
     const parts =
       paragraphs.length === 1 && lines.length > 1 ? lines : paragraphs;
-    const count = Math.max(3, Math.min(6, parts.length));
+    const count = Math.max(3, Math.min(MAX_FILM_SHOTS, parts.length));
     p.shots = Array.from({ length: count }, (_, i) => ({
       ...seedProject().shots[i % 3],
       id: randomUUID(),
       title: `镜头 ${String(i + 1).padStart(2, "0")}`,
       description:
-        parts.length <= 6 && (parts[i]?.length ?? 0) <= 2000
+        parts.length <= MAX_FILM_SHOTS && (parts[i]?.length ?? 0) <= 2000
           ? (parts[i] ?? "")
           : "",
       dialogue: "",

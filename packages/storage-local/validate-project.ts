@@ -1,4 +1,5 @@
 import { DomainError } from "../core/project.ts";
+import { MAX_FILM_SECONDS, MAX_FILM_SHOTS } from "../core/film-limits.ts";
 import type { Project, Shot } from "../contracts/index.ts";
 import { validateLedger } from '../providers/validation.ts';
 import {validateAudioTracks} from '../core/audio.ts';
@@ -52,7 +53,7 @@ export function validImage(x: unknown): asserts x is string {
     fail();
 }
 function shots(value: any): Shot[] {
-  const rows = list(value, 6);
+  const rows = list(value, MAX_FILM_SHOTS);
   if (!rows.length) fail();
   const ids = new Set();
   let seconds = 0;
@@ -113,7 +114,7 @@ function shots(value: any): Shot[] {
     )
       fail();
   }
-  if (seconds > 30) fail();
+  if (seconds > MAX_FILM_SECONDS) fail();
   return rows;
 }
 export function validateProject(value: unknown): asserts value is Project {

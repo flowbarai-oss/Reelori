@@ -1,4 +1,5 @@
 import {subtitleCues} from '../core/subtitles.ts';
+import { MAX_FILM_SECONDS, MAX_FILM_SHOTS } from '../core/film-limits.ts';
 import path from "node:path";
 import {verifyRenderedFile} from './verify-output.ts';
 import { localSource } from "./local-source.ts";
@@ -39,14 +40,14 @@ export async function renderAnimatic(
   const output = manifest(p);
   if (
     !p.shots.length ||
-    p.shots.length > 6 ||
-    output.durationSeconds > 30 ||
+    p.shots.length > MAX_FILM_SHOTS ||
+    output.durationSeconds > MAX_FILM_SECONDS ||
     p.shots.some(
       (s) => !Number.isInteger(s.seconds) || s.seconds < 2 || s.seconds > 10,
     )
   )
     throw new DomainError(
-      "预演规格须为 1–6 镜、每镜 2–10 秒、总长不超过 30 秒",
+      "预演规格须为 1–8 镜、每镜 2–10 秒、总长不超过 60 秒",
     );
   const id = output.snapshotId;
   await mkdir(dir, { recursive: true });
@@ -210,7 +211,7 @@ export async function renderAnimatic(
       temporary,
     );
     try {
-      await ffmpeg(args, 180000);
+      await ffmpeg(args, 360000);
     } catch {
       throw new DomainError(
         "本地合成失败。请检查 FFmpeg 配置、磁盘空间与素材文件；没有发布不完整成片。",

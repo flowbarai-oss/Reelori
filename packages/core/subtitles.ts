@@ -1,12 +1,13 @@
 import type {Project,SubtitleCue} from '../contracts/index.ts';
 import {DomainError} from './project.ts';
+import { MAX_FILM_SECONDS } from './film-limits.ts';
 export function validateSubtitles(p:Project,timeline=false){
  if(p.subtitleRevision!==undefined&&(!Number.isSafeInteger(p.subtitleRevision)||p.subtitleRevision<0))throw new DomainError('字幕版本无效',409);
  if(p.subtitleCues===undefined)return;
  if(!Array.isArray(p.subtitleCues)||p.subtitleCues.length>60)throw new DomainError('字幕最多支持 60 条',409);
  let end=0;const total=p.shots.reduce((n,s)=>n+s.seconds*1000,0);
  for(const c of p.subtitleCues){
-  if(!c||Object.keys(c).some(k=>!['startMs','endMs','text'].includes(k))||!Number.isSafeInteger(c.startMs)||!Number.isSafeInteger(c.endMs)||c.startMs<end||c.endMs<=c.startMs||c.endMs>30000||typeof c.text!=='string'||!c.text.trim()||c.text.length>1000||/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(c.text))throw new DomainError('字幕时间或文本无效，字幕不可重叠',409);
+  if(!c||Object.keys(c).some(k=>!['startMs','endMs','text'].includes(k))||!Number.isSafeInteger(c.startMs)||!Number.isSafeInteger(c.endMs)||c.startMs<end||c.endMs<=c.startMs||c.endMs>MAX_FILM_SECONDS*1000||typeof c.text!=='string'||!c.text.trim()||c.text.length>1000||/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(c.text))throw new DomainError('字幕时间或文本无效，字幕不可重叠',409);
   if(timeline&&c.endMs>total)throw new DomainError('字幕超出成片时长，请先调整字幕时间',409);
   end=c.endMs;
  }

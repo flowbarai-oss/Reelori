@@ -41,9 +41,9 @@ test('re-adopting a candidate repairs legacy duplicate same-shot voices',()=>{
  assert.throws(()=>validateAudioTracks(p,true));ledger.adoptProviderAudio(p,a.id,p.revision);assert.equal(p.audioTracks!.length,1);assert.doesNotThrow(()=>validateAudioTracks(p,true));
 });
 test('a kept candidate can be adopted after capacity is freed without another generation',()=>{
- const p=setup();for(let i=0;i<8;i++)addAudioTrack(p,{name:'owned',audio:'/api/assets/'+'b'.repeat(64)+'.wav',durationMs:1000,offsetMs:5000,volume:20,kind:'dialogue',rights:'owned'},p.revision);
+ const p=setup();for(let i=0;i<12;i++)addAudioTrack(p,{name:'owned',audio:'/api/assets/'+'b'.repeat(64)+'.wav',durationMs:1000,offsetMs:5000,volume:20,kind:'dialogue',rights:'owned'},p.revision);
  const j=generated(p);assert.throws(()=>ledger.adoptProviderAudio(p,j.id,p.revision));removeAudioTrack(p,p.audioTracks![0].id,p.revision);ledger.adoptProviderAudio(p,j.id,p.revision);
- assert.equal(p.audioTracks!.length,8);assert.equal(p.provider!.jobs.length,1);assert.equal(ledger.providerTotals(p).reservedMicros,15000);
+ assert.equal(p.audioTracks!.length,12);assert.equal(p.provider!.jobs.length,1);assert.equal(ledger.providerTotals(p).reservedMicros,15000);
 });
 test('editing dialogue after adoption blocks mixing outdated voice',()=>{
  const p=setup();const j=generated(p);ledger.adoptProviderAudio(p,j.id,p.revision);updateShot(p,p.shots[0].id,{dialogue:'new dialogue'},p.revision);assert.throws(()=>validateAudioTracks(p,true));
