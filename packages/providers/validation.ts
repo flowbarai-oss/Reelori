@@ -146,6 +146,8 @@ export function validateLedger(
       "shotId",
       "shotRevision",
       "referenceRevision",
+      "referenceId",
+      "referenceImage",
     ]);
     const i = q.input;
     if (
@@ -165,5 +167,11 @@ export function validateLedger(
     num(i.shotRevision, shot!.revision);
     num(i.referenceRevision, referenceRevision);
     if (!i.shotRevision || !i.referenceRevision) fail();
+    if ((i.referenceId === undefined) !== (i.referenceImage === undefined)) fail();
+    if (i.referenceId !== undefined) {
+      str(i.referenceId, 100);
+      if (!/^[A-Za-z0-9_-]+$/.test(i.referenceId) || i.provider !== "minimax-cn" || i.kind !== "video" || i.model !== "MiniMax-H3") fail();
+      if (typeof i.referenceImage !== "string" || !/^\/api\/assets\/[a-f0-9]{64}\.(png|jpg)$/.test(i.referenceImage)) fail();
+    }
   }
 }

@@ -15,6 +15,9 @@ export interface ProviderInput {
   shotId: string;
   shotRevision: number;
   referenceRevision: number;
+  /** Immutable local asset selected by the user for a MiniMax CN H3 video. */
+  referenceId?: string;
+  referenceImage?: string;
 }
 export interface ProviderQuote {
   billingNote?: string;

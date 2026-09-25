@@ -29,7 +29,12 @@ export class MiniMaxAdapter {
       input.seconds !== 5 ||
       !["768P:9:16", "768P:16:9"].includes(input.size) ||
       !input.prompt.trim() ||
-      input.prompt.length > 2000
+      input.prompt.length > 2000 ||
+      ((input.referenceId === undefined) !== (input.referenceImage === undefined)) ||
+      (input.referenceImage !== undefined &&
+        (this.region !== "cn" ||
+          !/^[A-Za-z0-9_-]{1,100}$/.test(input.referenceId!) ||
+          !/^\/api\/assets\/[a-f0-9]{64}\.(png|jpg)$/.test(input.referenceImage)))
     )
       throw new ProviderError("unsupported_h3_spec");
   }
@@ -84,11 +89,19 @@ export class MiniMaxAdapter {
       throw new ProviderError("invalid_response");
     }
   }
-  async submit(input: ProviderInput): Promise<ProviderResponse> {
+  async submit(input: ProviderInput, referenceBytes?: Buffer): Promise<ProviderResponse> {
     this.validate(input);
+    if (input.referenceImage && (!referenceBytes || referenceBytes.length < 1 || referenceBytes.length > 5 * 1024 * 1024))
+      throw new ProviderError("reference_image_missing_or_oversize");
+    if (!input.referenceImage && referenceBytes) throw new ProviderError("unexpected_reference_image");
+    const content: Array<Record<string, string>> = [{ type: "text", text: input.prompt }];
+    if (input.referenceImage) {
+      const mime = input.referenceImage.endsWith(".jpg") ? "image/jpeg" : "image/png";
+      content.push({ type: "image_url", role: "reference_image", image_url: `data:${mime};base64,${referenceBytes!.toString("base64")}` });
+    }
     const result = await this.read("video_generation", {
       model: input.model,
-      content: [{ type: "text", text: input.prompt }],
+      content,
       resolution: "768P",
       duration: input.seconds,
       ratio: input.size.slice(5),

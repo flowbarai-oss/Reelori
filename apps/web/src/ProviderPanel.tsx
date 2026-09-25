@@ -21,6 +21,8 @@ export function ProviderPanel({
   const [connection, setConnection] = useState<ModelConnection | null>(null),
     [route, setRoute] = useState(""),
     [shot, setShot] = useState(project.shots[0].id),
+    [referenceId, setReferenceId] = useState(""),
+    [referenceConsent, setReferenceConsent] = useState(false),
     [budget, setBudget] = useState(
       String((project.provider?.budgetMicros ?? 0) / 1000000),
     ),
@@ -77,9 +79,9 @@ export function ProviderPanel({
   const jobs = project.provider?.jobs ?? [],
     actual = jobs.reduce((n, j) => n + (j.actualMicros ?? 0), 0),
     reserved = jobs.reduce((n, j) => n + j.reservedMicros, 0);
-  const selectedProvider = connection?.routes.find(
-    (item) => item.id === route,
-  )?.provider;
+  const selectedRoute = connection?.routes.find((item) => item.id === route);
+  const selectedProvider = selectedRoute?.provider;
+  const referenceEligible = selectedProvider === "minimax-cn" && selectedRoute?.kind === "video" && selectedRoute?.model === "MiniMax-H3";
   const routeKeyConfigured =
     selectedProvider === "aliyun"
       ? connection?.credentials?.aliyun
@@ -99,8 +101,8 @@ export function ProviderPanel({
       <h2>{t("模型连接 · 真实生成", "Model connections · Live generation")}</h2>
       <p>
         {t(
-          "接入文生图、5 秒文生视频与镜头对白配音（TTS）；参考图暂不发送。协议已完成本地测试，真实模型质量与账单仍待验收。",
-          "Text-to-image, 5-second text-to-video, and per-shot dialogue voiceover (TTS). References are not sent. Protocol fixtures passed; live quality and billing still need validation.",
+          "接入文生图、5 秒文生视频与镜头对白配音（TTS）。MiniMax 中国端点 H3 可选择一张已上传参考图；其他路线不会发送参考图。实际费用以服务商账单为准。",
+          "Generate images, 5-second videos, and per-shot voiceover (TTS). MiniMax CN H3 can use one uploaded reference image; other routes do not send references. Check the provider bill for actual cost.",
         )}
       </p>
       <aside
@@ -205,6 +207,7 @@ export function ProviderPanel({
           onChange={(e) => {
             setRoute(e.target.value);
             setQuote(null);
+            setReferenceConsent(false);
           }}
         >
           <option value="">
@@ -228,6 +231,7 @@ export function ProviderPanel({
           onChange={(e) => {
             setShot(e.target.value);
             setQuote(null);
+            setReferenceConsent(false);
           }}
         >
           {project.shots.map((s) => (
@@ -237,6 +241,17 @@ export function ProviderPanel({
           ))}
         </select>
       </label>
+      {referenceEligible && (
+        <label>
+          {t("参考图（可选，仅发送本次选中的一张）", "Reference image (optional; only the selected image is sent)")}
+          <select value={referenceId} disabled={busy} onChange={(e) => { setReferenceId(e.target.value); setReferenceConsent(false); setQuote(null); }}>
+            <option value="">{t("不使用参考图 · 纯文字生成", "No reference · text only")}</option>
+            {project.references?.filter((ref) => /^\/api\/assets\/[a-f0-9]{64}\.(png|jpg)$/.test(ref.image)).map((ref) => (
+              <option key={ref.id} value={ref.id}>{ref.name} · {ref.rights}</option>
+            ))}
+          </select>
+        </label>
+      )}
       <button
         className="secondary"
         disabled={busy || !route || !(routeKeyConfigured ?? connection?.keyConfigured)}
@@ -246,10 +261,12 @@ export function ProviderPanel({
               routeId: route,
               shotId: shot,
               revision: project.revision,
+              ...(referenceEligible && referenceId ? { referenceId } : {}),
             });
             if (live.current) {
               operation.current = crypto.randomUUID();
               setQuote(q);
+              setReferenceConsent(false);
             }
           })
         }
@@ -273,16 +290,29 @@ export function ProviderPanel({
                 )}
           </p>
           <p>{quote.input.prompt}</p>
+          {quote.input.referenceImage && (
+            <div className="provider-reference-review">
+              <img src={quote.input.referenceImage} alt={t("即将发送的参考图", "Reference image to be sent")} />
+              <p>{t("将向 MiniMax 中国端点发送此图与镜头描述。参考图版本随报价冻结；修改项目参考后需重新报价。", "This image and the shot description will be sent to MiniMax CN. The reference version is frozen in this quote; changes require a new quote.")}</p>
+            </div>
+          )}
           {quote.billingNote && <p className="fine">{quote.billingNote}</p>}
+          {quote.input.referenceImage && (
+            <label className="provider-reference-consent">
+              <input type="checkbox" checked={referenceConsent} onChange={(e) => setReferenceConsent(e.target.checked)} />
+              <span>{t("我确认有权将这张图片发送给 MiniMax，用于本次付费生成。", "I confirm I have the right to send this image to MiniMax for this paid generation.")}</span>
+            </label>
+          )}
           <button
             className="primary"
-            disabled={busy}
+            disabled={busy || (!!quote.input.referenceImage && !referenceConsent)}
             onClick={() =>
               act(async () => {
                 const next = await update("provider-submit", {
                   quoteId: quote.id,
                   operationId: operation.current,
                   revision: project.revision,
+                  ...(quote.input.referenceImage ? { referenceConsent } : {}),
                 });
                 const job = next.provider!.jobs.find(
                   (j) => j.operationId === operation.current,

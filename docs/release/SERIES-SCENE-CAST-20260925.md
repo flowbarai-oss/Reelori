@@ -20,9 +20,10 @@ scene and cast metadata. Existing projects without these fields continue to
 load. A single-episode backup restores as a standalone project, while a full
 workspace archive retains series links.
 
-New image/video quotes display the assigned scene and cast text that will be
+At this preview.8 milestone, new image/video quotes display the assigned scene and cast text that will be
 sent to the selected provider after budget confirmation. Voice quotes continue
 to use dialogue only. Reference images are not yet submitted to a model; these
 records do not guarantee visual continuity or lift the 60-second per-episode
-rendering limit. The next integration step is explicit reference-image
-generation with provider-specific capability checks and price confirmation.
+rendering limit. The subsequent [preview.9 milestone](H3-REFERENCE-PREVIEW9-20260925.md)
+adds explicit single-image generation for MiniMax CN H3; the remaining limits
+in this historical note refer to preview.8.

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
-import type { Project } from "../contracts/index.ts";
+import type { Project, ReferenceVersion } from "../contracts/index.ts";
 import type { ProviderInput, ProviderJob, ProviderQuote } from "./contracts.ts";
 import { DomainError } from "../core/project.ts";
 import { validateAudioTracks } from "../core/audio.ts";
@@ -73,6 +73,7 @@ export function makeQuote(
     pricingVersion: string;
   },
   now = Date.now(),
+  referenceId?: string,
 ): ProviderQuote {
   const s = p.shots.find((s) => s.id === shotId);
   check(s, "镜头不存在");
@@ -80,6 +81,16 @@ export function makeQuote(
   const prompt = productionPrompt(p, s!, route.kind);
   check(prompt.trim(), route.kind === "audio" ? "该镜头没有对白，无法生成配音" : "镜头画面描述为空");
   check(prompt.length <= 2000, "镜头与场景角色信息合并后超过 2000 字，请精简后重试");
+  let reference: ReferenceVersion | undefined;
+  if (referenceId !== undefined) {
+    check(
+      route.provider === "minimax-cn" && route.kind === "video" && route.model === "MiniMax-H3",
+      "该模型路线不支持参考图",
+    );
+    check(typeof referenceId === "string" && /^[A-Za-z0-9_-]{1,100}$/.test(referenceId), "参考图编号无效");
+    reference = p.references?.find((r) => r.id === referenceId);
+    check(reference && /^\/api\/assets\/[a-f0-9]{64}\.(png|jpg)$/.test(reference.image), "请选择已上传的项目参考图");
+  }
   return {
     id: randomUUID(),
     input: {
@@ -92,6 +103,7 @@ export function makeQuote(
       shotId,
       shotRevision: s!.revision,
       referenceRevision: p.referenceRevision,
+      ...(referenceId !== undefined ? { referenceId, referenceImage: reference!.image } : {}),
     },
     upperMicros: route.upperMicros,
     pricingVersion: route.pricingVersion,
@@ -131,6 +143,12 @@ export function reserveProvider(
       s.seconds === q.input.seconds &&
       p.referenceRevision === q.input.referenceRevision,
     "镜头或参考版本已变化",
+  );
+  check(
+    (q.input.referenceId === undefined && q.input.referenceImage === undefined) ||
+      (q.input.provider === "minimax-cn" && q.input.kind === "video" &&
+        p.references?.some((r) => r.id === q.input.referenceId && r.image === q.input.referenceImage)),
+    "参考图已变化或模型路线不支持",
   );
   check(
     p.preview?.inputRevision === p.inputRevision &&

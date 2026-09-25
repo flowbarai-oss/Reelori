@@ -6,8 +6,9 @@ import { claimProvider, applyProvider } from "./ledger.ts";
 import { saveReference } from "../media/assets.ts";
 import { saveVideo } from "../media/video.ts";
 import { saveAudio } from "../media/audio.ts";
+import { readH3Reference } from "./h3-reference.ts";
 export interface Adapter {
-  submit(input: ProviderInput): Promise<ProviderResponse>;
+  submit(input: ProviderInput, referenceBytes?: Buffer): Promise<ProviderResponse>;
   query(id: string): Promise<ProviderResponse>;
   content(id: string): Promise<Buffer>;
 }
@@ -53,9 +54,12 @@ export async function runProviderJob(
   if (!claim) return;
   const work = claim as NonNullable<ReturnType<typeof claimProvider>>;
   try {
+    let referenceBytes: Buffer | undefined;
+    if (work.action === "submit" && work.job.quote.input.referenceImage)
+      referenceBytes = await readH3Reference(assetDir, work.job.quote.input.referenceImage);
     const response =
       work.action === "submit"
-        ? await adapter.submit(work.job.quote.input)
+        ? await adapter.submit(work.job.quote.input, referenceBytes)
         : await adapter.query(work.job.upstreamId!);
     let result: {
       image?: string;
