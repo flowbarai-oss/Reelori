@@ -94,10 +94,10 @@ export class MiniMaxAdapter {
     if (input.referenceImage && (!referenceBytes || referenceBytes.length < 1 || referenceBytes.length > 5 * 1024 * 1024))
       throw new ProviderError("reference_image_missing_or_oversize");
     if (!input.referenceImage && referenceBytes) throw new ProviderError("unexpected_reference_image");
-    const content: Array<Record<string, string>> = [{ type: "text", text: input.prompt }];
+    const content: Array<Record<string, unknown>> = [{ type: "text", text: input.prompt }];
     if (input.referenceImage) {
       const mime = input.referenceImage.endsWith(".jpg") ? "image/jpeg" : "image/png";
-      content.push({ type: "image_url", role: "reference_image", image_url: `data:${mime};base64,${referenceBytes!.toString("base64")}` });
+      content.push({ type: "image_url", role: "reference_image", image_url: { url: `data:${mime};base64,${referenceBytes!.toString("base64")}` } });
     }
     const result = await this.read("video_generation", {
       model: input.model,
