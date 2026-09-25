@@ -27,6 +27,9 @@ test('audio ingest normalizes bounded real audio and rejects fake containers',as
  const again=await saveAudio(readFileSync(path.join(dir,saved.audio.split('/').at(-1)!)),dir);assert.deepEqual(again,saved);
  await assert.rejects(()=>saveAudio(Buffer.from('not audio'),dir));
  await ffmpeg(['-f','lavfi','-i','sine=frequency=440:duration=31','-y',file]);
- await assert.rejects(()=>saveAudio(readFileSync(file),dir));
+ const long=await saveAudio(readFileSync(file),dir);assert.equal(long.durationMs,31000);
+ const project=seedProject();assert.throws(()=>addAudioTrack(project,{...long,name:'Too long for dialogue',kind:'dialogue',rights:'owned',offsetMs:0,volume:80},project.revision));
+ await ffmpeg(['-f','lavfi','-i','sine=frequency=440:duration=61','-c:a','libmp3lame','-y',path.join(dir,'too-long.mp3')]);
+ await assert.rejects(()=>saveAudio(readFileSync(path.join(dir,'too-long.mp3')),dir));
  }finally{rmSync(dir,{recursive:true,force:true});}
 });

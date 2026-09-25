@@ -138,7 +138,7 @@ export function inspectBackup(value: unknown) {
       seen.has(m.source) ||
       !required.has(m.source) ||
       typeof m.data !== "string" ||
-      m.data.length > (m.source.endsWith('.mp4')?86:m.source.endsWith('.wav')?14:7) * 1024 * 1024 ||
+      m.data.length > (m.source.endsWith('.mp4')?86:m.source.endsWith('.wav')?22:7) * 1024 * 1024 ||
       !/^[A-Za-z0-9+/]+={0,2}$/.test(m.data) ||
       m.data.length % 4 !== 0
     )
@@ -146,7 +146,7 @@ export function inspectBackup(value: unknown) {
     seen.add(m.source);
     const bytes = Buffer.from(m.data, "base64");
     total += bytes.length;
-    if (bytes.length > (m.source.endsWith('.mp4')?64:m.source.endsWith('.wav')?10:5) * 1024 * 1024 || digest(bytes) !== m.sha256)
+    if (bytes.length > (m.source.endsWith('.mp4')?64:m.source.endsWith('.wav')?16:5) * 1024 * 1024 || digest(bytes) !== m.sha256)
       throw new DomainError("素材摘要校验失败");
     if (
       m.source.startsWith("/api/assets/") &&

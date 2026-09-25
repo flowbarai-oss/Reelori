@@ -1,4 +1,5 @@
 import { DomainError } from "../core/project.ts";
+import { MAX_FILM_SECONDS, MAX_FILM_SHOTS } from "../core/film-limits.ts";
 const escape = (text: string) =>
   text.replace(
     /[&<>"']/g,
@@ -18,10 +19,10 @@ export function shareCard(
   if (
     !Number.isFinite(snapshot.durationSeconds) ||
     snapshot.durationSeconds <= 0 ||
-    snapshot.durationSeconds > 30 ||
+    snapshot.durationSeconds > MAX_FILM_SECONDS ||
     !Array.isArray(snapshot.shots) ||
     snapshot.shots.length < 1 ||
-    snapshot.shots.length > 6
+    snapshot.shots.length > MAX_FILM_SHOTS
   )
     throw new DomainError("成片信息无效");
   const title = options.includeTitle

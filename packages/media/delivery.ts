@@ -2,6 +2,7 @@ import { readFile, writeFile, rename, unlink } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import path from "node:path";
 import { DomainError } from "../core/project.ts";
+import { MAX_FILM_SHOTS, MAX_AUDIO_TRACKS } from "../core/film-limits.ts";
 import { localSource } from "./local-source.ts";
 import { makeZip, type ZipEntry } from "./zip.ts";
 const hash = (b: Buffer) => createHash("sha256").update(b).digest("hex");
@@ -30,7 +31,7 @@ export async function createDelivery(
   if (
     !Array.isArray(m.shots) ||
     m.shots.length < 1 ||
-    m.shots.length > 6 ||
+    m.shots.length > MAX_FILM_SHOTS ||
     !m.shots.every((s: any) => /^[a-f0-9]{64}$/.test(s.sourceSha256))
   )
     throw new DomainError("此旧合成记录没有素材摘要，请重新合成后打包", 409);
@@ -83,7 +84,7 @@ export async function createDelivery(
   });
   const audioTracks:{source:string;kind:string;durationMs:number;offsetMs:number;volume:number;rights:string}[]=[];
   if(m.audio==='mix'){
-    if(!Array.isArray(m.audioTracks)||m.audioTracks.length>10)throw new DomainError('音轨清单无效');
+    if(!Array.isArray(m.audioTracks)||m.audioTracks.length>MAX_AUDIO_TRACKS)throw new DomainError('音轨清单无效');
     for(const track of m.audioTracks){
       const bytes=await readFile(localSource(track.audio,assetDir));if(hash(bytes)!==track.sha256)throw new DomainError('声音素材摘要不一致',409);
       const source=`audio/track-${String(audioTracks.length+1).padStart(2,'0')}.wav`;entries.push({name:source,bytes});

@@ -1,10 +1,11 @@
 import {randomUUID} from 'node:crypto';
 import type {Project,AudioTrack} from '../contracts/index.ts';
 import {DomainError} from './project.ts';
+import { MAX_AUDIO_TRACKS, MAX_FILM_SECONDS, MAX_VOICE_TRACKS } from './film-limits.ts';
 const fail=(message='音频编排数据无效'):never=>{throw new DomainError(message,409);};
 export function validateAudioTracks(p:Project,timeline=false){
  const tracks=p.audioTracks??[];
- if(!Array.isArray(tracks)||tracks.length>10)fail('最多支持 8 段配音、1 段音乐和 1 段音效');
+ if(!Array.isArray(tracks)||tracks.length>MAX_AUDIO_TRACKS)fail('最多支持 12 段配音、1 段音乐和 1 段音效');
  if(p.audioRevision!==undefined&&(!Number.isSafeInteger(p.audioRevision)||p.audioRevision<0))fail();
  const ids=new Set<string>(),counts={dialogue:0,music:0,effect:0};
  const voiceShots=new Set<string>();
@@ -14,7 +15,7 @@ export function validateAudioTracks(p:Project,timeline=false){
   if(typeof t.name!=='string'||!t.name.trim()||t.name.length>80||t.name.includes('\0')||typeof t.audio!=='string'||!/^\/api\/assets\/[a-f0-9]{64}\.wav$/.test(t.audio))fail();
   if(!['dialogue','music','effect'].includes(t.kind)||!['owned','licensed','generated'].includes(t.rights))fail('请声明音频来源与使用权');
   counts[t.kind]++;
-  if(!Number.isSafeInteger(t.durationMs)||t.durationMs<100||t.durationMs>30000||!Number.isSafeInteger(t.offsetMs)||t.offsetMs<0||t.offsetMs>30000||!Number.isSafeInteger(t.volume)||t.volume<0||t.volume>100||!Number.isSafeInteger(t.createdAt)||t.createdAt<0)fail();
+  if(!Number.isSafeInteger(t.durationMs)||t.durationMs<100||t.durationMs>(t.kind==='music'?MAX_FILM_SECONDS*1000:30000)||!Number.isSafeInteger(t.offsetMs)||t.offsetMs<0||t.offsetMs>MAX_FILM_SECONDS*1000||!Number.isSafeInteger(t.volume)||t.volume<0||t.volume>100||!Number.isSafeInteger(t.createdAt)||t.createdAt<0)fail();
   if(timeline&&t.offsetMs+t.durationMs>p.shots.reduce((n,s)=>n+s.seconds*1000,0))fail('音频超出成片时长，请调整起始时间、镜头时长或换用较短音频；不会自动截断');
   if(timeline){
    const job=p.provider?.jobs.find(j=>j.id===t.id&&j.quote.input.kind==='audio');
@@ -28,7 +29,7 @@ export function validateAudioTracks(p:Project,timeline=false){
    }
   }
  }
- if(counts.dialogue>8||counts.music>1||counts.effect>1)fail('最多支持 8 段配音、1 段音乐和 1 段音效');
+ if(counts.dialogue>MAX_VOICE_TRACKS||counts.music>1||counts.effect>1)fail('最多支持 12 段配音、1 段音乐和 1 段音效');
 }
 function change(p:Project,tracks:AudioTrack[],revision:number){
  if(p.revision!==revision)fail('项目版本已变化');

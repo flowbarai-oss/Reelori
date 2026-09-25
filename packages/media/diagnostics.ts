@@ -52,7 +52,7 @@ export async function inspectRuntime(
     const available = fs.bavail * fs.bsize;
     checks.push({
       id: "space",
-      status: available >= 512n * 1024n * 1024n ? "pass" : "warn",
+      status: available >= 1024n * 1024n * 1024n ? "pass" : "warn",
       value: Number(
         available > BigInt(Number.MAX_SAFE_INTEGER)
           ? BigInt(Number.MAX_SAFE_INTEGER)
