@@ -128,6 +128,8 @@ export function updateShot(
     "seconds",
     "frame",
     "locked",
+    "sceneId",
+    "characterIds",
   ];
   for (const key of Object.keys(patch))
     if (!allowed.includes(key)) throw new DomainError("不支持的镜头字段");
@@ -139,6 +141,15 @@ export function updateShot(
       throw new DomainError("文字长度或格式不正确");
   if (patch.locked !== undefined && typeof patch.locked !== "boolean")
     throw new DomainError("锁定状态不正确");
+  if (patch.sceneId !== undefined && patch.sceneId !== null &&
+    !(p.scenes ?? []).some((scene) => scene.id === patch.sceneId))
+    throw new DomainError("场景不存在", 409);
+  if (patch.characterIds !== undefined &&
+    (!Array.isArray(patch.characterIds) || patch.characterIds.length > 8 ||
+      new Set(patch.characterIds).size !== patch.characterIds.length ||
+      patch.characterIds.some((characterId) => typeof characterId !== "string" ||
+        !(p.characters ?? []).some((character) => character.id === characterId))))
+    throw new DomainError("镜头角色无效", 409);
   if (
     source === "ai" &&
     shot.locked &&
@@ -161,12 +172,22 @@ export function updateShot(
     throw new DomainError("成片总时长不能超过 60 秒");
   const contentChanged = Object.entries(patch).some(
     ([key, value]) =>
-      key !== "locked" && shot[key as keyof typeof shot] !== value,
+      key !== "locked" && (key === "sceneId"
+        ? (shot.sceneId ?? null) !== value
+        : key === "characterIds"
+          ? JSON.stringify(shot.characterIds ?? []) !== JSON.stringify(value)
+          : shot[key as keyof typeof shot] !== value),
   );
+  const visualChanged = Object.entries(patch).some(([key, value]) =>
+    !["locked", "sceneId", "characterIds"].includes(key) && shot[key as keyof typeof shot] !== value);
   Object.assign(shot, patch);
+  if (patch.sceneId === null) delete shot.sceneId;
+  if (patch.characterIds !== undefined) shot.characterIds = [...patch.characterIds];
   if (contentChanged) {
-    delete shot.clipStartSeconds;
-    delete shot.sourceSeconds;
+    if (visualChanged) {
+      delete shot.clipStartSeconds;
+      delete shot.sourceSeconds;
+    }
     shot.revision++;
     shot.review = "pending";
   }
@@ -180,6 +201,8 @@ export function confirmPreview(p: Project, base: number) {
     inputRevision: p.inputRevision,
     referenceRevision: p.referenceRevision,
     shots: structuredClone(p.shots),
+    scenes: structuredClone(p.scenes ?? []),
+    characters: structuredClone(p.characters ?? []),
     createdAt: Date.now(),
   };
   bump(p);

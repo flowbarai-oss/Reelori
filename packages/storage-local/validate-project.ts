@@ -60,6 +60,8 @@ function shots(value: any): Shot[] {
   for (const s of rows) {
     object(s, [
       "id",
+      "sceneId",
+      "characterIds",
       "clipStartSeconds",
       "sourceSeconds",
       "title",
@@ -75,6 +77,12 @@ function shots(value: any): Shot[] {
       "review",
     ]);
     id(s.id);
+    if (s.sceneId !== undefined) id(s.sceneId);
+    if (s.characterIds !== undefined) {
+      const characterIds = list(s.characterIds, 8);
+      if (new Set(characterIds).size !== characterIds.length) fail();
+      characterIds.forEach(id);
+    }
     if (ids.has(s.id)) fail();
     ids.add(s.id);
     for (const k of ["title", "description", "dialogue", "frame"]) text(s[k]);
@@ -126,6 +134,9 @@ export function validateProject(value: unknown): asserts value is Project {
     "sourceName",
     "createdAt",
     "references",
+    "series",
+    "scenes",
+    "characters",
     "revision",
     "inputRevision",
     "referenceRevision",
@@ -143,6 +154,12 @@ export function validateProject(value: unknown): asserts value is Project {
   text(p.story, 40000, true);
   if (p.sourceName !== undefined) text(p.sourceName, 255);
   if (p.createdAt !== undefined) num(p.createdAt);
+  if (p.series !== undefined) {
+    object(p.series, ["id", "title", "episode"]);
+    id(p.series.id);
+    text(p.series.title, 80, true);
+    num(p.series.episode, 100, 1);
+  }
   for (const key of ["revision", "inputRevision", "referenceRevision"])
     num(p[key], Number.MAX_SAFE_INTEGER - 1, 1);
   num(p.budgetCents, 1000000);
@@ -201,6 +218,8 @@ export function validateProject(value: unknown): asserts value is Project {
       "inputRevision",
       "referenceRevision",
       "shots",
+      "scenes",
+      "characters",
       "createdAt",
     ]);
     id(s.id);
@@ -208,6 +227,15 @@ export function validateProject(value: unknown): asserts value is Project {
     num(s.referenceRevision, p.referenceRevision, 1);
     num(s.createdAt);
     shots(s.shots);
+    if (s.scenes !== undefined) for (const scene of list(s.scenes, 8)) {
+      object(scene, ["id", "name", "location", "notes"]);
+      id(scene.id); text(scene.name, 80, true); text(scene.location, 120); text(scene.notes, 500);
+    }
+    if (s.characters !== undefined) for (const character of list(s.characters, 8)) {
+      object(character, ["id", "name", "description", "referenceId"]);
+      id(character.id); text(character.name, 80, true); text(character.description, 500);
+      if (character.referenceId !== undefined) id(character.referenceId);
+    }
   }
   const refs = new Set();
   for (const r of list(p.references ?? [], 64)) {
@@ -220,6 +248,33 @@ export function validateProject(value: unknown): asserts value is Project {
     validImage(r.image);
     enumeration(r.rights, ["owned", "licensed", "generated"]);
     num(r.createdAt);
+  }
+  const sceneIds = new Set<string>();
+  for (const scene of list(p.scenes ?? [], 8)) {
+    object(scene, ["id", "name", "location", "notes"]);
+    id(scene.id);
+    if (sceneIds.has(scene.id)) fail();
+    sceneIds.add(scene.id);
+    text(scene.name, 80, true);
+    text(scene.location, 120);
+    text(scene.notes, 500);
+  }
+  const characterIds = new Set<string>();
+  for (const character of list(p.characters ?? [], 8)) {
+    object(character, ["id", "name", "description", "referenceId"]);
+    id(character.id);
+    if (characterIds.has(character.id)) fail();
+    characterIds.add(character.id);
+    text(character.name, 80, true);
+    text(character.description, 500);
+    if (character.referenceId !== undefined) {
+      id(character.referenceId);
+      if (!refs.has(character.referenceId)) fail();
+    }
+  }
+  for (const shot of [...current, ...(p.preview?.shots ?? [])]) {
+    if (shot.sceneId !== undefined && !sceneIds.has(shot.sceneId)) fail();
+    if ((shot.characterIds ?? []).some((characterId: string) => !characterIds.has(characterId))) fail();
   }
   let last = 0;
   for (const e of list(p.events, 100)) {
