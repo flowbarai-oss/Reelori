@@ -38,6 +38,7 @@ import { chooseStartupProjectId } from "./startup-project";
 import { ReferencePanel } from "./ReferencePanel";
 import { ProjectLibrary } from "./ProjectLibrary";
 import { ProductionPanel } from "./ProductionPanel";
+import { currentCandidates, selectedCandidate } from "./review-candidates";
 
 const money = (cents: number) => `¥${(cents / 100).toFixed(2)}`;
 async function api(path: string, body?: unknown) {
@@ -92,6 +93,8 @@ export function App() {
   const [dialog, setDialog] = useState<"budget" | "generate" | null>(null);
   const [editBase, setEditBase] = useState(0);
   const [reviewIndex, setReviewIndex] = useState(0);
+  const [reviewCandidateId, setReviewCandidateId] = useState("");
+  const [comparisonCandidateId, setComparisonCandidateId] = useState("");
   const [checks, setChecks] = useState<boolean[]>([false, false, false]);
   const [playing, setPlaying] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -113,6 +116,8 @@ export function App() {
     setProject(p);
     setSelected(p.shots.map((s) => s.id));
     setReviewIndex(0);
+    setReviewCandidateId("");
+    setComparisonCandidateId("");
     setChecks([false, false, false]);
     setEdit(null);
     setDialog(null);
@@ -293,9 +298,9 @@ export function App() {
   const ready =
     project?.jobs.filter((j) => j.status === "succeeded").length || 0;
   const reviewShot = project?.shots[reviewIndex];
-  const candidate = reviewShot?.candidates
-    .filter((c) => c.inputRevision === reviewShot.revision)
-    .at(-1);
+  const reviewCandidates = reviewShot ? currentCandidates(reviewShot) : [];
+  const candidate = reviewShot ? selectedCandidate(reviewShot, reviewCandidateId) : undefined;
+  const comparisonCandidate = reviewCandidates.find((item) => item.id === comparisonCandidateId && item.id !== candidate?.id);
   const candidateAdopted =
     !!candidate &&
     reviewShot?.adoptedId === candidate.id &&
@@ -1005,6 +1010,8 @@ export function App() {
                             className={reviewIndex === i ? "active" : ""}
                             onClick={() => {
                               setReviewIndex(i);
+                              setReviewCandidateId("");
+                              setComparisonCandidateId("");
                               setChecks([false, false, false]);
                             }}
                           >
@@ -1013,17 +1020,46 @@ export function App() {
                           </button>
                         ))}
                       </div>
+                      {reviewCandidates.length > 0 && (
+                        <section className="candidate-browser" aria-label={t("本镜头候选版本", "Candidate versions for this shot")}>
+                          <div className="candidate-browser-heading">
+                            <strong>{t("选择要复核的版本", "Choose a version to review")}</strong>
+                            <small>{t(`当前内容可用 ${reviewCandidates.length} 版`, `${reviewCandidates.length} current versions`)}</small>
+                          </div>
+                          <div className="candidate-browser-list">
+                            {reviewCandidates.map((item, index) => (
+                              <button
+                                type="button"
+                                key={item.id}
+                                className={candidate?.id === item.id ? "active" : ""}
+                                aria-pressed={candidate?.id === item.id}
+                                onClick={() => { setReviewCandidateId(item.id); setComparisonCandidateId(""); setChecks([false, false, false]); }}
+                              >
+                                <img src={item.image} alt="" />
+                                <span>{t(`候选 ${reviewCandidates.length - index}`, `Candidate ${reviewCandidates.length - index}`)}<small>{item.mode === "sample" ? t("内置示例", "Sample") : t("模型生成", "Model")}{reviewShot?.adoptedId === item.id && reviewShot.review === "accepted" ? ` · ${t("已采纳", "Adopted")}` : ""}</small></span>
+                              </button>
+                            ))}
+                          </div>
+                          {reviewCandidates.length > 1 && <label className="candidate-compare-select">
+                            {t("左侧对照", "Compare on the left")}
+                            <select value={comparisonCandidate?.id ?? ""} onChange={(event) => setComparisonCandidateId(event.target.value)}>
+                              <option value="">{t("角色参考图", "Character reference")}</option>
+                              {reviewCandidates.filter((item) => item.id !== candidate?.id).map((item, index) => <option value={item.id} key={item.id}>{t(`另一候选 ${index + 1}`, `Other candidate ${index + 1}`)}</option>)}
+                            </select>
+                          </label>}
+                        </section>
+                      )}
                       <div className="review-layout">
                         <section className="compare-image">
-                          <img
-                            src={
+                          {comparisonCandidate?.video ? <video controls preload="metadata" src={comparisonCandidate.video} aria-label={t("对照候选视频", "Comparison candidate video")} /> : <img
+                            src={comparisonCandidate?.image ?? (
                               project?.references?.at(-1)?.image ||
                               "/assets/rain-portrait.png"
-                            }
-                            alt={t("主角参考", "Character reference")}
-                          />
+                            )}
+                            alt={comparisonCandidate ? t("对照候选", "Comparison candidate") : t("主角参考", "Character reference")}
+                          />}
                           <span>
-                            {project.references?.at(-1)?.name ||
+                            {comparisonCandidate ? t("另一候选 · 人工对照", "OTHER CANDIDATE · MANUAL COMPARISON") : project.references?.at(-1)?.name ||
                               t(
                                 "角色参考 · 林夏示例",
                                 "REFERENCE · LIN XIA SAMPLE",
@@ -1340,9 +1376,12 @@ export function App() {
                             )}
                           </p>
                         </div>
-                        <span className="pill">
-                          {t("示例项目", "SAMPLE PROJECT")}
-                        </span>
+                        <div className="results-heading-actions">
+                          <span className="pill">{project.id === "sample" ? t("示例项目", "SAMPLE PROJECT") : t("我的项目", "MY PROJECT")}</span>
+                          <button className="primary" onClick={() => document.getElementById("render-panel")?.scrollIntoView({ behavior: "smooth", block: "start" })}>
+                            <FilmSlate size={18} /> {t("合成与导出", "Render & export")}
+                          </button>
+                        </div>
                       </section>
                       <div className="results-layout">
                         <section className="poster">
@@ -1430,7 +1469,7 @@ export function App() {
                           </dl>
                         </section>
                         <section className="results-production" aria-label={t("成片制作与交付", "Film production and delivery")}>
-                          <RenderPanel key={project.id} project={project} lang={lang} request={projectApi} onChange={acceptProject}>
+                          <RenderPanel key={project.id} project={project} lang={lang} request={projectApi} onChange={acceptProject} onOpenSettings={() => go("settings")}>
                           <div className="results-actions">
                           <button
                             className="secondary full large"
@@ -1523,8 +1562,8 @@ export function App() {
                           </span>
                           <p>
                             {t(
-                              "FlowBar 密钥只由本机服务读取；真实生成会发送已确认镜头的描述或对白。示例任务与真实美元费用分开记录，结果未知时不自动重提。配音（TTS）已接入阿里云智能语音交互，供应商随时可能更换或增加。",
-                              "Only the local service reads the FlowBar key. Live generation sends the confirmed shot description or dialogue. Demo costs and USD bills stay separate; unknown outcomes are not automatically resubmitted. Voiceover (TTS) is connected via Aliyun Intelligent Speech Interaction; the provider may change or expand later.",
+                              "FlowBar Key 通过本机页面提交给本机服务并安全存储，不写入项目或浏览器持久存储；真实生成会发送已确认镜头的描述或对白。示例任务与真实美元费用分开记录，结果未知时不自动重提。配音（TTS）已接入阿里云智能语音交互，供应商随时可能更换或增加。",
+                              "The FlowBar key is submitted to the local service and stored securely on this device, never in projects or persistent browser storage. Live generation sends the confirmed shot description or dialogue. Demo costs and USD bills stay separate; unknown outcomes are not automatically resubmitted. Voiceover (TTS) is connected via Aliyun Intelligent Speech Interaction; the provider may change or expand later.",
                             )}
                           </p>
                           <h3>{t("当前可体验", "Available now")}</h3>

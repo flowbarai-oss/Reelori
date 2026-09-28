@@ -72,6 +72,9 @@ export function RuntimePanel({
       if (live.current) setBusy(false);
     }
   }
+  useEffect(() => {
+    void check();
+  }, []);
   return (
     <section className="panel runtime-panel">
       <h2>

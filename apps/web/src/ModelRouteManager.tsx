@@ -17,6 +17,7 @@ export type ModelConnection = {
   configured: boolean;
   keyConfigured: boolean;
   credentials?: { flowbar: boolean; minimax: boolean; aliyun: boolean };
+  flowbarKeyEditable?: boolean;
   configRevision: string;
   routes: ModelRoute[];
   catalogRoutes: ModelRoute[];

@@ -27,6 +27,7 @@ import {
   loadProviderConfig,
   loadProviderKey,
   loadAliyunCredential,
+  updateWindowsFlowbarKey,
 } from "../../packages/providers/config.ts";
 import type { ProviderConfig } from "../../packages/providers/config.ts";
 import {
@@ -36,6 +37,7 @@ import {
 } from "../../packages/providers/model-routes.ts";
 import type { Adapter } from "../../packages/providers/worker.ts";
 import { FlowBarAdapter } from "../../packages/providers/flowbar.ts";
+import { checkFlowbarKey } from "../../packages/providers/flowbar-verify.ts";
 import { MiniMaxAdapter } from "../../packages/providers/minimax.ts";
 import { readH3Reference } from "../../packages/providers/h3-reference.ts";
 import { AliyunTtsAdapter } from "../../packages/providers/aliyun-tts.ts";
@@ -94,8 +96,8 @@ export function createApi(
       enabled: route.enabled !== false,
     })),
   };
-  const providerKey = providerOptions?.key ?? loadProviderKey();
-  const providerAdapter =
+  let providerKey = providerOptions?.key ?? loadProviderKey();
+  let providerAdapter =
     providerOptions?.adapter ?? new FlowBarAdapter(providerKey);
   const minimaxKey = loadProviderKey("minimax"),
     minimaxAdapter = new MiniMaxAdapter(minimaxKey);
@@ -138,6 +140,13 @@ export function createApi(
   const quotes = new Map<string, { projectId: string; quote: ProviderQuote }>();
   let providerBusy = false;
   let routeEditBusy = false;
+  const flowbarKeyEditable =
+    process.platform === "win32" && !providerOptions &&
+    !process.env.REELORI_FLOWBAR_KEY && !process.env.REELORI_FLOWBAR_KEY_FILE;
+  const flowbarJobsPending = () => store.list().some(({ id }) =>
+    store.get(id).provider?.jobs.some((job) =>
+      (job.quote.input.provider ?? "flowbar") === "flowbar" &&
+      !["succeeded", "failed"].includes(job.state)) ?? false);
   let rendering: string | null = null;
   let transferring = false,
     decoding = false;
@@ -194,6 +203,7 @@ export function createApi(
           minimax: !!minimaxKey,
           aliyun: !!aliyunKey,
         },
+        flowbarKeyEditable,
         routes: providerConfig.routes.filter(
           (r) => r.enabled !== false && r.expiresAt > Date.now(),
         ),
@@ -359,6 +369,7 @@ export function createApi(
               minimax: !!minimaxKey,
               aliyun: !!aliyunKey,
             },
+            flowbarKeyEditable,
             routes: next.routes.filter(
               (r) => r.enabled !== false && r.expiresAt > Date.now(),
             ),
@@ -368,6 +379,32 @@ export function createApi(
         } finally {
           routeEditBusy = false;
         }
+      }
+      if (url.pathname === "/api/flowbar-credential") {
+        if (!flowbarKeyEditable)
+          throw new DomainError("此设备的 FlowBarAI Key 由环境配置管理，无法在应用内修改", 409);
+        if (body.action !== "set" && body.action !== "remove")
+          throw new DomainError("请选择保存或移除 FlowBarAI Key", 400);
+        if (body.action === "set" &&
+          (typeof body.key !== "string" || body.key.length < 16 ||
+            body.key.length > 4096 || /\s/.test(body.key)))
+          throw new DomainError("请输入有效的国际站 API Key", 400);
+        if (providerBusy || flowbarJobsPending())
+          throw new DomainError("仍有 FlowBarAI 任务待完成或对账，请先处理后再更换 Key", 409);
+        try { updateWindowsFlowbarKey(body.action, body.key); }
+        catch { throw new DomainError("Windows 安全存储操作失败，请检查当前用户权限", 500); }
+        providerKey = body.action === "set" ? body.key : "";
+        providerAdapter = new FlowBarAdapter(providerKey);
+        quotes.clear();
+        return send(200, {
+          flowbar: !!providerKey,
+          flowbarKeyEditable,
+          validation: "not-verified-remotely",
+        });
+      }
+      if (url.pathname === "/api/flowbar-credential-check") {
+        if (!providerKey) throw new DomainError("请先配置 FlowBarAI 国际站 Key", 409);
+        return send(200, await checkFlowbarKey(providerKey));
       }
       if(url.pathname==='/api/audio-track')return send(200,store.transact(p=>editAudioTrack(p,body.id,{offsetMs:body.offsetMs,volume:body.volume},body.revision),projectId));
       if(url.pathname==='/api/audio-remove')return send(200,store.transact(p=>removeAudioTrack(p,body.id,body.revision),projectId));

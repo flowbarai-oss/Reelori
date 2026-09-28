@@ -50,8 +50,17 @@ export function seedProject(): Project {
     inputRevision: 1,
     referenceRevision: 1,
     budgetCents: 6000,
+    scenes: [
+      { id: "sample-rain-street", name: "雨夜街头", location: "城市江边", notes: "夜雨与霓虹倒影" },
+      { id: "sample-darkroom", name: "暗房", location: "林夏的工作室", notes: "暖色安全灯与旧底片" },
+    ],
+    characters: [
+      { id: "sample-lin-xia", name: "林夏", description: "短发，米色风衣，喜欢用旧相机记录城市。" },
+    ],
     shots: initial.map((s, i) => ({
       id: s[1].toLowerCase(),
+      sceneId: i === 1 ? "sample-darkroom" : "sample-rain-street",
+      characterIds: ["sample-lin-xia"],
       title: s[0],
       description: s[2],
       dialogue: s[3],

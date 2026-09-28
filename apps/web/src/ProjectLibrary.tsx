@@ -156,7 +156,7 @@ export function ProjectLibrary({
                 value={story}
                 required
                 maxLength={40000}
-                rows={7}
+                rows={5}
                 onChange={(e) => {
                   setStory(e.target.value);
                   setSource("");
@@ -217,15 +217,8 @@ export function ProjectLibrary({
               </label>
               <small>{story.length.toLocaleString()} / 40,000</small>
             </div>
-            <p className="fine">
-              {t(
-                "原文完整保留。空行分段；若没有空行，则按逐行整理草稿。不调用 AI；过长或超过 8 段时镜头留待手动填写。画面暂用内置占位图。",
-                "The original stays intact. Blank lines separate paragraphs; without blank lines, each line drafts a shot. No AI is used. Long text or more than 8 sections stays for manual shot editing. Images are sample placeholders.",
-              )}
-            </p>
-            {source && <p className="fine">{source}</p>}
             <button
-              className="primary"
+              className="primary library-create"
               disabled={busy || !title.trim() || !story.trim()}
             >
               {busy
@@ -233,6 +226,13 @@ export function ProjectLibrary({
                 : t("创建并进入工作台", "Create and open studio")}
               <ArrowRight size={18} />
             </button>
+            <p className="fine">
+              {t(
+                "原文完整保留。空行分段；若没有空行，则按逐行整理草稿。不调用 AI；过长或超过 8 段时镜头留待手动填写。画面暂用内置占位图。",
+                "The original stays intact. Blank lines separate paragraphs; without blank lines, each line drafts a shot. No AI is used. Long text or more than 8 sections stays for manual shot editing. Images are sample placeholders.",
+              )}
+            </p>
+            {source && <p className="fine">{source}</p>}
           </form>
         </div>
         {error && (

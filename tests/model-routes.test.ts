@@ -57,6 +57,7 @@ test("local model-group edits persist without exposing credentials or accepting 
     });
     assert.equal(update.status, 200, JSON.stringify(update.data));
     assert.equal(update.data.routes.length, 2);
+    assert.equal(update.data.flowbarKeyEditable, before.flowbarKeyEditable);
     assert.notEqual(update.data.configRevision, before.configRevision);
     const disabled = await request("/api/provider-routes", {
       revision: update.data.configRevision,
