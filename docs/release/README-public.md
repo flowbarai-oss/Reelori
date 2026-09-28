@@ -10,11 +10,11 @@ clips, one music track and one effect. Music may cover the full 60 seconds.
 
 幕芽 Reelori 是本地优先的单人 AI 短片创作工作台。可整理剧本、编辑分镜、预演节奏、接入自有模型密钥、人工采纳候选，并导出成片、字幕与素材清单。
 单部短片最多 8 镜、60 秒，可编排 12 段配音、1 段背景音乐及 1 段音效；背景音乐可覆盖整片。
-项目库可从现有故事创建下一集；分镜可关联场景和角色，报价会展示将发送的场景与角色文字。单集备份恢复为独立项目，完整工作区归档保留剧集关系。参考图仍只用于人工复核，尚不提交给模型。
+项目库可从现有故事创建下一集；分镜可关联场景和角色，报价会展示将发送的场景与角色文字。单集备份恢复为独立项目，完整工作区归档保留剧集关系。MiniMax H3 的单张参考图路线须由用户逐次选择并确认；其他路线不自动发送参考图。
 
-**Status / 状态：** community preview under preparation. The source build is
-available for development; a verified Windows installer and Docker image are
-not yet published. Never expose the local service to a network.
+**Status / 状态：** community preview source is public. A verified Windows
+installer and Docker image have not been published. Never expose the local
+service to a network.
 
 ## Run from source / 源码运行
 
@@ -49,14 +49,21 @@ and preserves the data directory.
 
 ## Model keys and privacy / 模型密钥与隐私
 
-On Windows, run `powershell -File scripts/credentials.ps1 -Action set -Provider flowbar`
-from the package directory to store a FlowBar international key with Windows
-user-scoped encryption. `minimax` and `aliyun` are also supported providers.
+On Windows, save or remove a FlowBarAI international API key in **Project
+Settings → Models & Costs**. The local service encrypts it for the current
+Windows user using DPAPI. The connection check only verifies read-only access
+to the model list; it does not verify wallet balance or a specific model.
+`minimax` and `aliyun` can be configured with `scripts/credentials.ps1`.
 The FlowBar route uses `https://api.flowbarai.com/v1`; get a key from
 [FlowBarAI international](https://flowbarai.com/). The
 [GEN studio](https://gen.flowbarai.com/) is a separate hosted product.
 
-密钥只由本机服务读取，不进入浏览器、项目备份或成片交付包。真实生成会把已确认的镜头提示词或对白发送给所选服务商，并可能产生费用。样例任务不会产生真实模型费用。现有环境变量和外置文件配置供开发迁移使用；请勿把密钥文件放进仓库。
+The settings page links to the official FlowBarAI top-up page. Check that the
+website account owns the API key before paying, then confirm balance and order
+status on the website. Reelori's USD budget is a local spending limit, not a
+wallet balance. The app does not take payments or confirm wallet credits.
+
+密钥只由本机服务读取，不进入浏览器、项目备份或成片交付包。在「项目设置 → 模型与费用」可保存或移除 FlowBarAI 国际站 Key；连通性检查仅验证只读模型列表鉴权，不代表钱包有余额。充值入口打开官方网页，支付与到账状态须在主站核对；本机美元预算不是钱包余额。真实生成会把已确认的镜头提示词或对白发送给所选服务商，并可能产生费用。样例任务不会产生真实模型费用。现有环境变量和外置文件配置供开发迁移使用；请勿把密钥文件放进仓库。
 
 ## Current limits / 当前边界
 
@@ -64,20 +71,20 @@ The FlowBar route uses `https://api.flowbarai.com/v1`; get a key from
   twelve voices, music, effect and a delivery ZIP. A local 1920x1080 source
   stress test passed; performance on other Windows machines remains unverified.
 - Series links, scenes and cast organize episodes; multi-minute rendering and
-  multi-shot identity control remain in development. See [series and cast scope](docs/release/SERIES-SCENE-CAST-20260925.md).
+  multi-shot identity control remain in development. See [series and cast scope](SERIES-SCENE-CAST-20260925.md).
 - Text-to-image, text-to-video and TTS routes have been exercised. MiniMax CN H3
   now supports one explicitly selected local reference image per five-second
   video quote. Both a direct provider call and one complete paid product flow
   succeeded after correcting the nested image URL payload. See the
-  [source milestone](docs/release/H3-REFERENCE-PREVIEW9-20260925.md).
+  [source milestone](H3-REFERENCE-PREVIEW9-20260925.md).
 - Other image-to-video routes, multi-reference, first/last-frame control, remote access,
   hosted accounts and automatic upgrades are not supported.
 - Provider reservations are local estimates, not a verified supplier invoice.
 - Windows is the currently tested development platform. Docker remains a
   candidate until a clean Linux build and data-persistence test passes.
 
-See [quick start](docs/release/QUICKSTART.md), [security policy](SECURITY.md),
-[third-party notices](THIRD_PARTY_NOTICES.md) and [contributing](CONTRIBUTING.md).
-Code and the three bundled example images are licensed under [MIT](LICENSE).
+See [quick start](QUICKSTART.md), [security policy](../../SECURITY.md),
+[third-party notices](../../THIRD_PARTY_NOTICES.md) and [contributing](../../CONTRIBUTING.md).
+Code and the three bundled example images are licensed under [MIT](../../LICENSE).
 Bundled third-party components retain their own licenses; see the
-[notices](THIRD_PARTY_NOTICES.md).
+[notices](../../THIRD_PARTY_NOTICES.md).

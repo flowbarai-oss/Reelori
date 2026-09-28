@@ -10,7 +10,7 @@ function readWindowsCredential(provider: "flowbar" | "minimax" | "aliyun") {
       "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File",
       fileURLToPath(new URL("../../scripts/credentials.ps1", import.meta.url)),
       "-Action", "get", "-Provider", provider,
-    ], { encoding: "utf8", windowsHide: true, timeout: 5000, maxBuffer: 8192,
+    ], { encoding: "utf8", windowsHide: true, timeout: 15000, maxBuffer: 8192,
       stdio: ["ignore", "pipe", "ignore"] }).trim();
   } catch { return ""; }
 }
@@ -46,6 +46,20 @@ export function loadProviderKey(provider: "flowbar" | "minimax" = "flowbar") {
   } catch {
     return "";
   }
+}
+export function updateWindowsFlowbarKey(action: "set" | "remove", key?: string) {
+  if (process.platform !== "win32") throw new Error("Windows credential storage is unavailable");
+  if (action === "set" && (!key || key.length < 16 || key.length > 4096 || /\s/.test(key)))
+    throw new Error("Invalid FlowBarAI key");
+  execFileSync("powershell.exe", [
+    "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File",
+    fileURLToPath(new URL("../../scripts/credentials.ps1", import.meta.url)),
+    "-Action", action === "set" ? "set-stdin" : "remove", "-Provider", "flowbar",
+  ], {
+    encoding: "utf8", windowsHide: true, timeout: 10000, maxBuffer: 8192,
+    input: action === "set" ? key : undefined,
+    stdio: ["pipe", "pipe", "pipe"],
+  });
 }
 // 阿里云智能语音交互(NLS)鉴权需要 appkey，另外需要 token（24 小时时效的动态值）
 // 或 AccessKey Id + AccessKey Secret（长期凭据，用来通过 CreateToken 官方接口自动换取新 token）

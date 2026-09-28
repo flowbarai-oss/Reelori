@@ -23,6 +23,8 @@ for (const line of sums) {
 }
 if (!files.includes('runtime/node.exe') || !files.includes('desktop/Reelori.exe') ||
     !files.includes('Reelori.ico') || !files.includes('LICENSE') ||
+    !['rain-wide.png', 'darkroom.png', 'rain-portrait.png']
+      .every((name) => files.includes(`public/assets/${name}`)) ||
     !files.includes('vendor/ffmpeg/ffmpeg.exe') ||
     !files.includes('vendor/ffmpeg/LICENSE') ||
     !files.includes('vendor/ffmpeg/UPSTREAM-README.txt'))

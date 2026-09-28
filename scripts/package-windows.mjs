@@ -91,7 +91,7 @@ await writeFile(path.join(ffmpegDir, 'SOURCE-PROVENANCE.txt'), [
   'Public binary release requires a corresponding source bundle and license review.',
   '',
 ].join('\n'));
-for (const relative of ['apps/local-service', 'packages', 'apps/web/dist/client']) {
+for (const relative of ['apps/local-service', 'packages', 'apps/web/dist/client', 'public/assets']) {
   await cp(path.join(root, relative), path.join(output, relative), { recursive: true });
 }
 await mkdir(path.join(output, 'scripts'), { recursive: true });

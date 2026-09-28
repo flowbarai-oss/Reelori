@@ -1,6 +1,8 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { DownloadSimple, FilmSlate, CircleNotch } from "@phosphor-icons/react";
 import type { Project } from "../../../packages/contracts/index.ts";
+import type { RuntimeReport } from "../../../packages/media/diagnostics.ts";
+import { requestRuntimeCheck } from "./runtime-client";
 import {AudioPanel} from './AudioPanel';
 import {SubtitlePanel} from './SubtitlePanel';
 type Output = {
@@ -21,12 +23,14 @@ export function RenderPanel({
   lang,
   request,
   onChange,
+  onOpenSettings,
   children,
 }: {
   project: Project;
   lang: string;
   request: (route: string, body?: unknown) => Promise<any>;
   onChange:(p:Project)=>void;
+  onOpenSettings:()=>void;
   children?: ReactNode;
 }) {
   const t = (zh: string, en: string) => (lang === "zh" ? zh : en);
@@ -42,6 +46,32 @@ export function RenderPanel({
   const [volume, setVolume] = useState(1);
   const [includeTitle, setIncludeTitle] = useState(false);
   const [card, setCard] = useState<{ url: string; id: string } | null>(null);
+  const [runtime, setRuntime] = useState<RuntimeReport | null>(null);
+  const [runtimeBusy, setRuntimeBusy] = useState(true);
+  const [runtimeError, setRuntimeError] = useState(false);
+  async function checkRuntime() {
+    setRuntimeBusy(true);
+    setRuntimeError(false);
+    try {
+      setRuntime(await requestRuntimeCheck(request));
+    } catch {
+      setRuntime(null);
+      setRuntimeError(true);
+    } finally {
+      setRuntimeBusy(false);
+    }
+  }
+  useEffect(() => {
+    let live = true;
+    setRuntime(null);
+    setRuntimeBusy(true);
+    setRuntimeError(false);
+    requestRuntimeCheck(request)
+      .then((report) => { if (live) setRuntime(report); })
+      .catch(() => { if (live) setRuntimeError(true); })
+      .finally(() => { if (live) setRuntimeBusy(false); });
+    return () => { live = false; };
+  }, [project.id]);
   useEffect(
     () => () => {
       if (card) URL.revokeObjectURL(card.url);
@@ -69,8 +99,26 @@ export function RenderPanel({
     };
   }, [project.id]);
   return (
-    <section className="render-panel">
+    <section className="render-panel" id="render-panel">
       <div className="render-setup">
+      <div className={`render-readiness ${runtime?.ready ? "ready" : ""}`} aria-live="polite">
+        <div>
+          <strong>{t("本机成片准备", "Local render readiness")}</strong>
+          <span>{runtimeBusy
+            ? t("正在检查导出目录和视频编码器…", "Checking export storage and video encoder…")
+            : runtime?.ready
+              ? t("已通过，可以合成 MP4", "Ready to render MP4")
+              : runtimeError
+                ? t("检查失败，请确认本地服务后重试", "Check failed. Confirm the local service, then retry.")
+                : runtime?.checks.some((check) => check.id === "encoder" && check.status === "fail")
+                  ? t("FFmpeg 视频编码检查未通过；请查看检查项", "FFmpeg encoding check failed; view the checks")
+                : t("尚不能合成，请先处理本机检查项", "Rendering needs attention. Review local checks first.")}</span>
+        </div>
+        <div className="render-readiness-actions">
+          <button className="secondary" type="button" disabled={runtimeBusy} onClick={checkRuntime}>{t("重新检查", "Recheck")}</button>
+          {!runtimeBusy && !runtime?.ready && <button className="secondary" type="button" onClick={onOpenSettings}>{t("查看检查项", "View checks")}</button>}
+        </div>
+      </div>
       <AudioPanel project={project} lang={lang} request={request} onChange={onChange}/>
       <SubtitlePanel project={project} lang={lang} request={request} onChange={onChange} onDirty={setSubtitleDirty}/>
       <label className="render-history">
@@ -107,6 +155,8 @@ export function RenderPanel({
         className="primary full large"
         disabled={
           busy ||
+          runtimeBusy ||
+          runtime?.ready !== true ||
           subtitleDirty ||
           remoteBusy ||
           project.shots.some((s) => s.review !== "accepted")

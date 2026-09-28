@@ -32,6 +32,9 @@ export function ProviderPanel({
     [billJob, setBillJob] = useState(""),
     [bill, setBill] = useState(""),
     [evidence, setEvidence] = useState(""),
+    [keyDraft, setKeyDraft] = useState(""),
+    [keyNotice, setKeyNotice] = useState<"saved" | "removed" | "">(""),
+    [keyCheck, setKeyCheck] = useState<"authenticated" | "rejected" | "unavailable" | "">(""),
     [historyOpen, setHistoryOpen] = useState(() => project.provider?.jobs.some((job) => ["reserved", "submitting", "running", "unknown"].includes(job.state)) ?? false);
   const live = useRef(true),
     operation = useRef("");
@@ -71,6 +74,33 @@ export function ProviderPanel({
     const next = await request(path, body);
     if (live.current) onChange(next);
     return next as Project;
+  }
+  async function manageFlowbarKey(action: "set" | "remove") {
+    await act(async () => {
+      const result = await request("flowbar-credential", {
+        action,
+        ...(action === "set" ? { key: keyDraft } : {}),
+      });
+      setConnection((current) => current ? {
+        ...current,
+        keyConfigured: result.flowbar || !!current.credentials?.minimax || !!current.credentials?.aliyun,
+        credentials: {
+          flowbar: result.flowbar,
+          minimax: !!current.credentials?.minimax,
+          aliyun: !!current.credentials?.aliyun,
+        },
+      } : current);
+      setQuote(null);
+      setKeyCheck("");
+      setKeyNotice(action === "set" ? "saved" : "removed");
+    });
+    setKeyDraft("");
+  }
+  async function checkKey() {
+    await act(async () => {
+      const result = await request("flowbar-credential-check", {});
+      setKeyCheck(result.state);
+    });
   }
   const isAdopted = (job: ProviderJob) =>
     project.shots.some(
@@ -124,10 +154,7 @@ export function ProviderPanel({
         </p>
         <p className="flowbar-bridge-status" role="status">
           {!connection?.credentials
-            ? t(
-                "本机服务重启后可显示国际站 Key 配置状态。",
-                "Restart the local service to show international key status.",
-              )
+            ? t("正在读取本机 Key 状态。", "Reading local key status.")
             : connection.credentials.flowbar
               ? t(
                   "国际站 Key 已在本机配置，权限尚待实际请求验证。",
@@ -135,7 +162,50 @@ export function ProviderPanel({
                 )
               : t("尚未配置国际站 Key。", "International key not configured yet.")}
         </p>
+        {connection?.flowbarKeyEditable && (
+          <div className="flowbar-key-setup">
+            <label htmlFor="flowbar-key-input">
+              {t("国际站 API Key（只保存在当前 Windows 用户的安全存储中）", "International API key (stored for this Windows user only)")}
+            </label>
+            <div className="flowbar-key-actions">
+              <input
+                id="flowbar-key-input"
+                type="password"
+                autoComplete="off"
+                spellCheck={false}
+                maxLength={4096}
+                value={keyDraft}
+                onChange={(event) => setKeyDraft(event.target.value)}
+                placeholder={t("粘贴国际站 Key", "Paste your international key")}
+              />
+              <button type="button" disabled={busy || !keyDraft} onClick={() => void manageFlowbarKey("set")}>
+                {t("安全保存", "Save securely")}
+              </button>
+              {connection.credentials?.flowbar && <button type="button" className="secondary" disabled={busy} onClick={() => void manageFlowbarKey("remove")}>
+                {t("移除本机 Key", "Remove local key")}
+              </button>}
+              {connection.credentials?.flowbar && <button type="button" className="secondary" disabled={busy} onClick={() => void checkKey()}>
+                {t("验证连接", "Check connection")}
+              </button>}
+            </div>
+            <p className="fine">{t("Key 仅经本机服务写入 Windows 凭据文件；不会进入项目、备份或浏览器持久存储。保存不代表已验证账户余额或模型权限。", "The local service stores the key in Windows-protected storage, never in projects, backups or browser storage. Saving does not verify balance or model access.")}</p>
+            {keyNotice && <p role="status" className="flowbar-key-notice">{keyNotice === "saved"
+              ? t("Key 已安全保存到本机；实际模型权限仍需以生成请求验证。", "Key saved securely on this device; model access is verified only by a live request.")
+              : t("本机 Key 已移除；主站账户中的 Key 并未撤销。", "Local key removed; the key was not revoked in your FlowBarAI account.")}</p>}
+            {keyCheck && <p role="status" className="flowbar-key-notice">{keyCheck === "authenticated"
+              ? t("国际站模型列表鉴权通过；具体模型权限及余额仍以主站为准。", "International model-list authentication passed. Model access and balance still depend on your account.")
+              : keyCheck === "rejected"
+                ? t("国际站拒绝此 Key，请在主站核对并更换。", "The international site rejected this key. Check or replace it in your account.")
+                : t("暂时无法验证连接，请稍后重试；不代表 Key 无效。", "Connection check is unavailable. Try later; this does not prove the key is invalid.")}</p>}
+          </div>
+        )}
         <div className="flowbar-bridge-links">
+          <a href="https://flowbarai.com/topup" target="_blank" rel="noopener noreferrer">
+            {t("前往国际站充值 ↗", "Top up at FlowBarAI ↗")}
+          </a>
+          <a href="https://flowbarai.com/dashboard" target="_blank" rel="noopener noreferrer">
+            {t("查看余额与账单 ↗", "Balance and usage ↗")}
+          </a>
           <a href="https://flowbarai.com/" target="_blank" rel="noopener noreferrer">
             {t("前往 FlowBarAI 国际站获取 Key ↗", "Get a key at FlowBarAI ↗")}
           </a>
@@ -143,6 +213,12 @@ export function ProviderPanel({
             {t("探索 FlowBarAI GEN 创作站 ↗", "Explore FlowBarAI GEN Studio ↗")}
           </a>
         </div>
+        <p className="fine">
+          {t(
+            "充值前请确认主站登录的是此 Key 所属账号；到账以主站订单和余额为准，本机不会把支付回跳当作到账。",
+            "Before topping up, confirm you are signed in to the account that owns this key. Check the site's order and balance for crediting; a payment return alone is not proof of credit.",
+          )}
+        </p>
       </aside>
       {connection && Array.isArray(connection.catalogRoutes) ? (
         <ModelRouteManager
@@ -163,11 +239,13 @@ export function ProviderPanel({
         <p className="fine">{t("请重启本机服务以启用模型组管理。", "Restart the local service to enable model route management.")}</p>
       ) : null}
       <p>
-        {connection?.configured && connection.keyConfigured
-          ? t("本机已有服务商凭据；请按模型路线核对。", "At least one provider credential is configured locally; check the selected route.")
+        {connection?.keyConfigured
+          ? connection.configured
+            ? t("本机已有服务商凭据；请按模型路线核对。", "At least one provider credential is configured locally; check the selected route.")
+            : t("Key 已配置；还需在「管理模型组」中添加已核实价格的模型路线。", "A key is configured. Add a model route with verified pricing under Manage model routes.")
           : t(
-              "尚未配置连接：请在本机设置对应服务商密钥，模型路线可在上方管理；修改密钥后重启。密钥不进入浏览器或备份。",
-              "Connection not configured: set the provider key locally and manage routes above; restart after changing keys. Keys stay out of the browser and backups.",
+              "尚未配置连接：FlowBarAI Key 可在上方安全保存；其他服务商请按启动说明配置。密钥不会写入浏览器存储或备份。",
+              "Connection not configured: save a FlowBarAI key securely above, or follow setup instructions for other providers. Keys are not written to browser storage or backups.",
             )}
       </p>
       <p>
