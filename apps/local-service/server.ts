@@ -67,6 +67,11 @@ import { Store } from "../../packages/storage-local/store.ts";
 import { getDataDir } from "../../packages/core/data-dir.ts";
 import { checkForUpdate } from "../../packages/core/updates.ts";
 import {
+  installedWindowsUpdateContext,
+  stageOfficialWindowsUpdate,
+  launchStagedWindowsUpdate,
+} from "../../packages/core/windows-update.ts";
+import {
   DomainError,
   updateShot,
   confirmPreview,
@@ -139,6 +144,7 @@ export function createApi(
           : providerAdapter;
   const quotes = new Map<string, { projectId: string; quote: ProviderQuote }>();
   let providerBusy = false;
+  let updateBusy = false;
   let routeEditBusy = false;
   const flowbarKeyEditable =
     process.platform === "win32" && !providerOptions &&
@@ -188,8 +194,9 @@ export function createApi(
       return send(401, { error: "本地会话已过期，请刷新页面" });
     if (req.method === "GET" && url.pathname === "/api/update") {
       const version = JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8")).version;
-      try { return send(200, await checkForUpdate(version)); }
-      catch { return send(200, { current: version, status: "unavailable" }); }
+      const installable = !!(await installedWindowsUpdateContext());
+      try { return send(200, { ...await checkForUpdate(version), installable }); }
+      catch { return send(200, { current: version, status: "unavailable", installable }); }
     }
     const projectId = url.searchParams.get("projectId") ?? "sample";
     if (req.method === "GET" && url.pathname === "/api/provider")
@@ -340,6 +347,27 @@ export function createApi(
         chunks.push(chunk);
       }
       const body = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+      if (url.pathname === '/api/update/prepare') {
+        if (!(await installedWindowsUpdateContext()))
+          return send(409, { code: 'update_not_ready', error: 'Online installation requires a production-signed Reelori build' });
+        if (updateBusy) return send(409, { code: 'update_busy', error: 'An update is already being prepared' });
+        updateBusy = true;
+        try { return send(200, await stageOfficialWindowsUpdate()); }
+        catch { return send(409, { code: 'update_prepare_failed', error: 'Official update download or verification did not complete' }); }
+        finally { updateBusy = false; }
+      }
+      if (url.pathname === '/api/update/install') {
+        if (!(await installedWindowsUpdateContext()))
+          return send(409, { code: 'update_not_ready', error: 'Online installation requires a production-signed Reelori build' });
+        if (updateBusy || rendering || providerBusy || flowbarJobsPending())
+          return send(409, { code: 'update_work_active', error: 'Finish active work before installing an update' });
+        let update;
+        try { update = await launchStagedWindowsUpdate(); }
+        catch { return send(409, { code: 'update_install_failed', error: 'Prepared update could not be started safely' }); }
+        send(200, { version: update.version, status: 'restarting' });
+        setTimeout(() => process.send?.({ type: 'quit-for-update' }), 500);
+        return;
+      }
       if (url.pathname === "/api/diagnostics")
         return send(200, await checkRuntime());
       if (!body || typeof body !== "object" || Array.isArray(body))

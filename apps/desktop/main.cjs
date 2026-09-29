@@ -74,9 +74,16 @@ async function start() {
     REELORI_WEB_PORT: String(webPort),
     REELORI_OPEN_BROWSER: '0',
     REELORI_FFMPEG: bundledFfmpeg,
+    REELORI_PACKAGED: '1',
+    REELORI_APP_ROOT: root,
+    REELORI_DESKTOP_PID: String(process.pid),
   };
-  children.push(spawn(runtime, ['apps/local-service/server.ts'],
-    { cwd: root, env, windowsHide: true, stdio: 'ignore' }));
+  const localService = spawn(runtime, ['apps/local-service/server.ts'],
+    { cwd: root, env, windowsHide: true, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
+  localService.on('message', (message) => {
+    if (message && message.type === 'quit-for-update') app.quit();
+  });
+  children.push(localService);
   children.push(spawn(runtime, ['scripts/serve-web.mjs'],
     { cwd: root, env, windowsHide: true, stdio: 'ignore' }));
   await ready();

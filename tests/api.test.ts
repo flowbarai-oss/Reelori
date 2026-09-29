@@ -76,6 +76,15 @@ test("API requires a local session and trusted origin; invalid writes cannot alt
       403,
     );
     const local = { ...auth, Origin: "http://127.0.0.1:5178" };
+    for (const action of ['prepare', 'install']) {
+      assert.equal(
+        (await fetch(url + `/api/update/${action}`, {
+          method: 'POST', headers: local, body: '{}',
+        })).status,
+        409,
+        'unsigned source mode must never stage or launch a Windows update',
+      );
+    }
     assert.equal(
       (
         await fetch(url + "/api/shot", {
