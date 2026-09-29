@@ -15,10 +15,16 @@ file-level SHA-256 manifest. The Reelori source remains MIT licensed; the
 bundled FFmpeg binary and its linked libraries retain their own licenses.
 
 This is a local preview candidate, not clearance for a public binary release.
-Before publishing an installer, assemble and verify corresponding source for
-the exact FFmpeg build and its linked libraries, document build instructions,
-make the source bundle available with the binary, review the complete license
-inventory, and perform clean-machine Windows install/render/uninstall checks.
+The exact FFmpeg core source archive at commit `946fcce07b6dcd0331c8cc609192aeff5e1924f8`
+has been downloaded and SHA-256 locked as
+`0aa2b1de2a5698b20a23e93d539a9a8e82ca0117496c5bdf05d198805f42bb3b`.
+`npm run audit:ffmpeg-sources` copies it into a local audit directory and
+enumerates 42 upstream external libraries. Their exact corresponding sources,
+licenses, patches and build recipes are still missing. The source audit is not
+a publishable corresponding-source offer. Before publishing an installer,
+complete that bundle, make it available beside the binary, review the license
+inventory, and pass `npm run release:verify-windows` plus signed clean-machine
+install/render/upgrade/rollback/uninstall acceptance.
 Do not create a public GitHub Release from this candidate until those gates
 pass. The three-shot sample demonstrates short-form export only; longer drama
 production additionally needs multi-scene capacity, character consistency,

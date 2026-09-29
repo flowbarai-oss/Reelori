@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -31,28 +31,23 @@ if (!files.includes('runtime/node.exe') || !files.includes('desktop/Reelori.exe'
   throw new Error('Package is incomplete');
 const outputDir = path.join(root, 'dist', 'installers');
 await mkdir(outputDir, { recursive: true });
-const folders = new Set();
-for (const name of files) {
-  let dir = path.posix.dirname(name);
-  while (dir !== '.') { folders.add(dir); dir = path.posix.dirname(dir); }
-}
-const windowsPath = (value) => value.replaceAll('/', '\\');
-const versionRoot = `$INSTDIR\\versions\\${version}`;
-const uninstall = [
-  ...files.map((name) => `Delete "${versionRoot}\\${windowsPath(name)}"`),
-  `Delete "${versionRoot}\\SHA256SUMS.txt"`,
-  ...[...folders].sort((a, b) => b.length - a.length)
-    .map((name) => `RMDir "${versionRoot}\\${windowsPath(name)}"`),
-].join('\r\n') + '\r\n';
-const uninstallFile = path.join(outputDir, `uninstall-${version}.nsh`);
-await writeFile(uninstallFile, uninstall);
 const output = path.join(outputDir, `reelori-${version}-setup.exe`);
 const compiler = process.env.REELORI_MAKENSIS ?? path.join(root, 'dist', 'tools', 'nsis', 'makensis.exe');
 await access(compiler);
 const result = spawnSync(compiler, [
   `/DAPP_VERSION=${version}`, `/DPACKAGE_DIR=${packageDir}`,
-  `/DOUTPUT_FILE=${output}`, `/DUNINSTALL_FILES=${uninstallFile}`,
+  `/DOUTPUT_FILE=${output}`,
   path.join(root, 'packaging', 'windows', 'Reelori.nsi'),
 ], { encoding: 'utf8', maxBuffer: 4 * 1024 * 1024 });
 if (result.status !== 0) throw new Error(`Installer compile failed:\n${result.stdout}\n${result.stderr}`);
+if (process.env.REELORI_SIGN_CERT_THUMBPRINT) {
+  const signed = spawnSync('powershell.exe', [
+    '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
+    '-File', path.join(root, 'scripts', 'sign-windows-artifact.ps1'),
+    '-File', output,
+    '-CertificateThumbprint', process.env.REELORI_SIGN_CERT_THUMBPRINT,
+    '-SignTool', process.env.REELORI_SIGNTOOL ?? 'signtool.exe',
+  ], { encoding: 'utf8', maxBuffer: 1024 * 1024 });
+  if (signed.status !== 0) throw new Error(`Installer signing failed:\n${signed.stdout}\n${signed.stderr}`);
+}
 console.log(`Windows installer: ${output}`);

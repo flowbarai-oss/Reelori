@@ -1,6 +1,6 @@
 {
   "name": "reelori-local",
-  "version": "0.4.0-preview.12",
+  "version": "0.4.0-preview.14",
   "private": true,
   "type": "module",
   "engines": {
@@ -18,6 +18,8 @@
     "start": "node scripts/start.mjs",
     "package:windows": "node scripts/package-windows.mjs",
     "build:installer": "node scripts/build-installer.mjs",
+    "audit:ffmpeg-sources": "node scripts/audit-ffmpeg-sources.mjs",
+    "release:verify-windows": "node scripts/verify-windows-release.mjs",
     "export:public": "node scripts/export-public.mjs",
     "scan:secrets": "node scripts/scan-secrets.mjs --history",
     "server": "node apps/local-service/server.ts",
