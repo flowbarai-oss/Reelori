@@ -56,7 +56,7 @@ export function updateWindowsFlowbarKey(action: "set" | "remove", key?: string) 
     fileURLToPath(new URL("../../scripts/credentials.ps1", import.meta.url)),
     "-Action", action === "set" ? "set-stdin" : "remove", "-Provider", "flowbar",
   ], {
-    encoding: "utf8", windowsHide: true, timeout: 10000, maxBuffer: 8192,
+    encoding: "utf8", windowsHide: true, timeout: 30000, maxBuffer: 8192,
     input: action === "set" ? key : undefined,
     stdio: ["pipe", "pipe", "pipe"],
   });
