@@ -9,9 +9,6 @@ Unicode true
 !ifndef OUTPUT_FILE
   !error "OUTPUT_FILE is required"
 !endif
-!ifndef UNINSTALL_FILES
-  !error "UNINSTALL_FILES is required"
-!endif
 
 Name "Reelori"
 OutFile "${OUTPUT_FILE}"
@@ -35,8 +32,15 @@ Function .onInit
   SetShellVarContext current
   StrCmp $INSTDIR "$LOCALAPPDATA\Programs\Reelori" +2 0
     Abort "Unsupported install path"
-  IfFileExists "$INSTDIR\current.txt" 0 +2
-    Abort "Existing Reelori installation found. Upgrade transactions are not enabled in this preview."
+  ; Never overwrite a version that might be running. A different version is staged
+  ; beside the current one; the verified updater switches current.txt afterwards.
+  IfFileExists "$INSTDIR\current.txt" 0 init_done
+    FileOpen $0 "$INSTDIR\current.txt" r
+    FileRead $0 $1
+    FileClose $0
+    StrCmp $1 "${APP_VERSION}" 0 init_done
+      Abort "This Reelori version is already active."
+  init_done:
 FunctionEnd
 
 Section "Reelori" SecMain
@@ -45,13 +49,20 @@ Section "Reelori" SecMain
   SetOutPath "$INSTDIR"
   File "${__FILEDIR__}\Launch.ps1"
   File "${__FILEDIR__}\Reelori.ico"
-  FileOpen $0 "$INSTDIR\current.txt" w
-  FileWrite $0 "${APP_VERSION}"
-  FileClose $0
+  IfFileExists "$INSTDIR\current.txt" staged_install
+    FileOpen $0 "$INSTDIR\current.txt" w
+    FileWrite $0 "${APP_VERSION}"
+    FileClose $0
+    Goto pointer_done
+  staged_install:
+    FileOpen $0 "$INSTDIR\staged.txt" w
+    FileWrite $0 "${APP_VERSION}"
+    FileClose $0
+  pointer_done:
   WriteUninstaller "$INSTDIR\Uninstall.exe"
   CreateDirectory "$SMPROGRAMS\Reelori"
-  CreateShortCut "$SMPROGRAMS\Reelori\Reelori.lnk" "$INSTDIR\versions\${APP_VERSION}\desktop\Reelori.exe" "" "$INSTDIR\versions\${APP_VERSION}\Reelori.ico"
-  CreateShortCut "$DESKTOP\Reelori.lnk" "$INSTDIR\versions\${APP_VERSION}\desktop\Reelori.exe" "" "$INSTDIR\versions\${APP_VERSION}\Reelori.ico"
+  CreateShortCut "$SMPROGRAMS\Reelori\Reelori.lnk" "$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File $\"$INSTDIR\Launch.ps1$\"" "$INSTDIR\Reelori.ico"
+  CreateShortCut "$DESKTOP\Reelori.lnk" "$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File $\"$INSTDIR\Launch.ps1$\"" "$INSTDIR\Reelori.ico"
   CreateShortCut "$SMPROGRAMS\Reelori\Uninstall.lnk" "$INSTDIR\Uninstall.exe"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Reelori" "DisplayName" "Reelori"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Reelori" "DisplayVersion" "${APP_VERSION}"
@@ -70,10 +81,13 @@ Section "Uninstall"
   Delete "$INSTDIR\Launch.ps1"
   Delete "$INSTDIR\Reelori.ico"
   Delete "$INSTDIR\current.txt"
-  !include "${UNINSTALL_FILES}"
+  Delete "$INSTDIR\current.next"
+  Delete "$INSTDIR\current.bak"
+  Delete "$INSTDIR\staged.txt"
+  Delete "$INSTDIR\previous.txt"
+  ; User projects live under $LOCALAPPDATA\Reelori, outside this program root.
+  RMDir /r "$INSTDIR\versions"
   Delete "$INSTDIR\Uninstall.exe"
-  RMDir "$INSTDIR\versions\${APP_VERSION}"
-  RMDir "$INSTDIR\versions"
   RMDir "$INSTDIR"
   DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Reelori"
   ; Never touch $LOCALAPPDATA\Reelori: that directory contains user work.

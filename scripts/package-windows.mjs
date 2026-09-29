@@ -95,7 +95,8 @@ for (const relative of ['apps/local-service', 'packages', 'apps/web/dist/client'
   await cp(path.join(root, relative), path.join(output, relative), { recursive: true });
 }
 await mkdir(path.join(output, 'scripts'), { recursive: true });
-for (const name of ['start.mjs', 'serve-web.mjs', 'credentials.ps1'])
+for (const name of ['start.mjs', 'serve-web.mjs', 'credentials.ps1',
+  'verify-windows-installer.ps1', 'apply-windows-update.ps1'])
   await cp(path.join(root, 'scripts', name), path.join(output, 'scripts', name));
 for (const name of ['LICENSE', 'SECURITY.md', 'THIRD_PARTY_NOTICES.md'])
   await cp(path.join(root, name), path.join(output, name));
@@ -115,6 +116,16 @@ await mkdir(path.join(output, 'docs', 'release'), { recursive: true });
 await cp(path.join(root, 'docs/release/QUICKSTART.md'), path.join(output, 'docs/release/QUICKSTART.md'));
 await cp(electronDist, path.join(output, 'desktop'), { recursive: true });
 await rename(path.join(output, 'desktop', 'electron.exe'), path.join(output, 'desktop', 'Reelori.exe'));
+if (process.env.REELORI_SIGN_CERT_THUMBPRINT) {
+  const signed = spawnSync('powershell.exe', [
+    '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
+    '-File', path.join(root, 'scripts', 'sign-windows-artifact.ps1'),
+    '-File', path.join(output, 'desktop', 'Reelori.exe'),
+    '-CertificateThumbprint', process.env.REELORI_SIGN_CERT_THUMBPRINT,
+    '-SignTool', process.env.REELORI_SIGNTOOL ?? 'signtool.exe',
+  ], { encoding: 'utf8', maxBuffer: 1024 * 1024 });
+  if (signed.status !== 0) throw new Error(`Desktop signing failed:\n${signed.stdout}\n${signed.stderr}`);
+}
 await mkdir(path.join(output, 'desktop', 'resources', 'app'), { recursive: true });
 await cp(path.join(root, 'apps', 'desktop', 'main.cjs'), path.join(output, 'desktop', 'resources', 'app', 'main.cjs'));
 await writeFile(path.join(output, 'desktop', 'resources', 'app', 'package.json'), JSON.stringify({
@@ -137,6 +148,7 @@ await writeFile(path.join(output, 'RELEASE-METADATA.json'), JSON.stringify({
   nodeArchiveSha256: actual, sourceCommit: process.env.REELORI_SOURCE_SHA ?? null,
   ffmpegVersion: ffmpegLock.version, ffmpegLicense: ffmpegLock.license,
   ffmpegArchiveSha256: ffmpegArchiveHash,
+  codeSigningThumbprint: process.env.REELORI_SIGN_CERT_THUMBPRINT ?? null,
   generatedAt: new Date().toISOString(),
 }, null, 2) + '\n');
 async function collectHashes(directory, prefix = '') {
