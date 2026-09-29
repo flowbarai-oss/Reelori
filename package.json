@@ -1,6 +1,6 @@
 {
   "name": "reelori-local",
-  "version": "0.4.0-preview.10",
+  "version": "0.4.0-preview.12",
   "private": true,
   "type": "module",
   "engines": {

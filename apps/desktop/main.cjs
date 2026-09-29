@@ -26,7 +26,7 @@ function occupied(port) {
 
 function ready() {
   return new Promise((resolve, reject) => {
-    const deadline = Date.now() + 15000;
+    const deadline = Date.now() + 120000;
     function check() {
       if (children.some((child) => child.exitCode !== null || child.signalCode !== null))
         return reject(new Error('本机服务启动失败，请关闭其他 Reelori 窗口后重试。'));
